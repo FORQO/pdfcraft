@@ -513,7 +513,11 @@ fn choose(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> bool {
             d.error = None;
         }
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if ui.add_enabled_ui(d.selected.is_some(), |ui| widgets::pill_button(ui, tl!("Continue"), true)).inner.clicked() {
+            // Two rapid Continue presses (import the ID, then use it) can be
+            // interpreted as a double-click when both steps place this button
+            // at the same screen position. Treat either activation as Continue.
+            let continue_button = ui.add_enabled_ui(d.selected.is_some(), |ui| widgets::pill_button(ui, tl!("Continue"), true)).inner;
+            if continue_button.clicked() || continue_button.double_clicked() {
                 d.step = SignStep::SignAs;
                 d.error = None;
             }

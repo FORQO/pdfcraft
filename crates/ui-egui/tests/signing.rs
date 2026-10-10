@@ -181,8 +181,12 @@ fn certifying_without_a_visible_signature() {
     h.get_by_label("Continue").click();
     h.run_steps(2);
     assert_eq!(h.state().digital_ids.len(), 1);
+    assert_eq!(h.state().sign_draft.as_ref().map(|d| d.step), Some(SignStep::Choose));
+    // The next Continue is in almost the same position as the import button.
+    // A rapid second press must still advance rather than being lost as a double-click.
     h.get_by_label("Continue").click();
     h.run_steps(2);
+    assert_eq!(h.state().sign_draft.as_ref().map(|d| d.step), Some(SignStep::SignAs));
     h.get_by_label("Certify as \"Test Signer EC\"");
     h.get_by_label("Permitted actions after certifying");
     h.state_mut().sign_draft.as_mut().unwrap().password = "test".into();
