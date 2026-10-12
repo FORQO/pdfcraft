@@ -82,7 +82,7 @@ foreach ($entry in @(@('StartMenuShortcut', 'ProgramMenuFolder', 'PdfcraftStartM
                      @('DesktopShortcut', 'DesktopFolder', 'PdfcraftDesktopShortcut', 'INSTALLDESKTOPSHORTCUT = 1'))) {
   $row = Read-Row ('SELECT `Directory_`, `Target`, `Icon_`, `WkDir`, `Component_` FROM `Shortcut` WHERE `Shortcut` = ''' + $entry[0] + '''') 5
   $shortcutName = Read-Row ('SELECT `Name` FROM `Shortcut` WHERE `Shortcut` = ''' + $entry[0] + '''') 1
-  Assert-Equal $shortcutName[0] 'Veyra PDF' "$($entry[0]) brand"
+  Assert-Equal ($shortcutName[0] -split '\|', 2)[-1] 'Veyra PDF' "$($entry[0]) brand"
   Assert-Equal $row[0] $entry[1] "$($entry[0]) directory"
   Assert-Equal $row[1] '[#PdfcraftExe]' "$($entry[0]) target"
   Assert-Equal $row[2] 'PdfcraftIcon.ico' "$($entry[0]) icon"
