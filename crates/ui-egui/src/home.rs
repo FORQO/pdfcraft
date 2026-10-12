@@ -13,7 +13,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         egui::Frame::NONE.inner_margin(egui::Margin { left: 28, right: 28, top: 24, bottom: 28 }).show(ui, |ui| {
-            ui.label(egui::RichText::new(tl!("Welcome to PdfCraft")).font(theme::semibold(23.0)));
+            ui.label(egui::RichText::new(crate::i18n::branded(tl!("Welcome to PdfCraft"))).font(theme::semibold(23.0)));
             ui.label(
                 egui::RichText::new(tl!("An open-source PDF workbench — local, private, and scriptable."))
                     .color(t.text_muted)
@@ -105,7 +105,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             ui.label(egui::RichText::new(tl!("Recent")).font(theme::semibold(18.0)));
             ui.add_space(8.0);
             if app.recent.is_empty() {
-                ui.label(egui::RichText::new(tl!("Files you open in PdfCraft appear here. Drop a PDF anywhere to open it.")).color(t.text_muted));
+                ui.label(egui::RichText::new(crate::i18n::branded(tl!("Files you open in PdfCraft appear here. Drop a PDF anywhere to open it."))).color(t.text_muted));
             }
             let mut open = None;
             for r in &app.recent {
@@ -142,7 +142,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             ui.add_space(20.0);
             widgets::section_title(ui, tl!("Privacy"));
             ui.label(
-                egui::RichText::new(tl!("PdfCraft works offline. No telemetry, no account, and no cloud processing unless you add a provider."))
+                egui::RichText::new(crate::i18n::branded(tl!("PdfCraft works offline. No telemetry, no account, and no cloud processing unless you add a provider.")))
                     .color(t.text_muted),
             );
         });
