@@ -53,7 +53,12 @@ mod tests {
     fn answers_are_read_and_only_our_release_pages_are_offered() {
         let r = parse(r#"{"tag_name":"ru-v0.2.0","html_url":"https://github.com/maxliv234-star/pdfcraft/releases/tag/ru-v0.2.0"}"#).unwrap();
         assert_eq!(r, Release { version: "ru-v0.2.0".into(), url: "https://github.com/maxliv234-star/pdfcraft/releases/tag/ru-v0.2.0".into() });
-        for elsewhere in ["https://example.com/pdfcraft.exe", "https://github.com/maxliv234-star/pdfcraft/releases.evil/x", "https://github.com/storytold/pdfcraft/releases/tag/v99.0.0", "javascript:alert(1)"] {
+        for elsewhere in [
+            "https://example.com/pdfcraft.exe",
+            "https://github.com/maxliv234-star/pdfcraft/releases.evil/x",
+            "https://github.com/storytold/pdfcraft/releases/tag/v99.0.0",
+            "javascript:alert(1)",
+        ] {
             let r = parse(&format!(r#"{{"tag_name":"v9.9.9","html_url":"{elsewhere}"}}"#)).unwrap();
             assert_eq!(r.url, RELEASES_PAGE, "{elsewhere}");
         }

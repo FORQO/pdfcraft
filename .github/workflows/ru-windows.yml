@@ -36,3 +36,32 @@ jobs:
           path: target/release/pdfcraft.exe
           if-no-files-found: error
           retention-days: 14
+
+  installer:
+    name: Build and validate Veyra PDF x64 MSI
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: veyra-msi-x64
+      - name: Install WiX Toolset 5
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          & "$env:USERPROFILE\.dotnet\tools\wix.exe" --version
+      - name: Build MSI and portable ZIP (includes MSI verification)
+        shell: pwsh
+        run: ./packaging/windows/package.ps1 -Arch x64
+      - name: Upload installer and portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veyra-PDF-Windows-x64-installer
+          path: |
+            dist/release/*-windows-x64.msi
+            dist/release/*-windows-x64-portable.zip
+          if-no-files-found: error
+          retention-days: 14

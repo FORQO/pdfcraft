@@ -105,7 +105,10 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             ui.label(egui::RichText::new(tl!("Recent")).font(theme::semibold(18.0)));
             ui.add_space(8.0);
             if app.recent.is_empty() {
-                ui.label(egui::RichText::new(crate::i18n::branded(tl!("Files you open in PdfCraft appear here. Drop a PDF anywhere to open it."))).color(t.text_muted));
+                ui.label(
+                    egui::RichText::new(crate::i18n::branded(tl!("Files you open in PdfCraft appear here. Drop a PDF anywhere to open it.")))
+                        .color(t.text_muted),
+                );
             }
             let mut open = None;
             for r in &app.recent {
@@ -142,8 +145,10 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             ui.add_space(20.0);
             widgets::section_title(ui, tl!("Privacy"));
             ui.label(
-                egui::RichText::new(crate::i18n::branded(tl!("PdfCraft works offline. No telemetry, no account, and no cloud processing unless you add a provider.")))
-                    .color(t.text_muted),
+                egui::RichText::new(crate::i18n::branded(tl!(
+                    "PdfCraft works offline. No telemetry, no account, and no cloud processing unless you add a provider."
+                )))
+                .color(t.text_muted),
             );
         });
     });
