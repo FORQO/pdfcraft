@@ -9,6 +9,7 @@ def replace_once(path, old, new):
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 module = "crates/ui-egui/src/pages_panel.rs"
+replace_once(module, "egui::WidgetInfo::selected(egui::WidgetType::Button, true, picked, label)", "egui::WidgetInfo::selected(egui::WidgetType::Button, true, picked, &label)")
 replace_once(module, "        self.drag = None;\n        self.keyboard = false;\n", "        self.drag = None;\n        // Keep focus across page moves; Delete releases ownership explicitly.\n")
 replace_once(module, "        app.views[index].page_strip.drag = None;\n        if app.commit_form_typing() {", "        app.views[index].page_strip.drag = None;\n        app.views[index].page_strip.keyboard = false;\n        if app.commit_form_typing() {")
 replace_once(module, "        view.select_pages(&(gap..at).collect::<Vec<_>>());", "        view.select_pages(&(gap..at).collect::<Vec<_>>());\n        view.page_strip.keyboard = true;")
