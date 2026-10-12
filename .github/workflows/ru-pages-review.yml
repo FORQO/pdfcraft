@@ -3,34 +3,115 @@ name: Pages panel source review
 on:
   push:
     branches: [feature/ru-ui-polish-and-releases]
-    paths: ['.github/workflows/ru-pages-review.yml']
+    paths: ['.github/workflows/ru-pages-review.yml', '.github/patches/pages-sidebar-*.rs', '.github/patches/apply-pages-sidebar.py']
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: pages-review-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   source-review:
+    if: github.repository == 'maxliv234-star/pdfcraft' && github.ref == 'refs/heads/feature/ru-ui-polish-and-releases'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_TERM_COLOR: never
+      PDFCRAFT_SYSTEM_FONTS: '0'
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Archive tracked source for reproducible UI regression review
+      - name: Apply the bounded sidebar change in the runner worktree
+        run: |
+          mkdir -p review
+          python3 .github/patches/apply-pages-sidebar.py
+      - name: Install Linux UI dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libgtk-3-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: pages-sidebar-review
+          cache-on-failure: true
+      - name: Format and check sidebar changes
+        run: |
+          cargo fmt --all
+          cargo fmt --all -- --check
+          cargo clippy --locked -p pdfcraft-ui-egui --all-targets -- -D warnings
+      - name: Run sidebar and existing page-edit regressions
         shell: bash
         run: |
           set -euo pipefail
+          cargo test --locked -p pdfcraft-ui-egui --lib --test pages_panel --test editing 2>&1 | tee review/pages-tests.log
+      - name: Validate full workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo clippy --workspace --all-targets --locked -- -D warnings 2>&1 | tee review/clippy.log
+          cargo test --workspace --locked 2>&1 | tee review/workspace-tests.log
+          cargo xtask layers
+          cargo xtask assets
+          git diff --check
+      - name: Prepare an unreferenced tested commit without moving any branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          paths = ['crates/ui-egui/src/canvas.rs', 'crates/ui-egui/src/lib.rs', 'crates/ui-egui/src/panels.rs', 'crates/ui-egui/src/pages_panel.rs', 'crates/ui-egui/src/i18n/ru.tsv', 'crates/ui-egui/tests/pages_panel.rs']
+          changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+          unknown = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
+          unexpected = set(changed + [p for p in unknown if not p.startswith('review/')]) - set(paths)
+          if unexpected:
+              raise RuntimeError(f'Unexpected source changes: {sorted(unexpected)}')
+          tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
+          entries = [{'path': p, 'mode': '100644', 'type': 'blob', 'content': pathlib.Path(p).read_text(encoding='utf-8')} for p in paths]
+          temporary = ['.github/patches/pages-sidebar-module.rs', '.github/patches/pages-sidebar-tests.rs', '.github/patches/apply-pages-sidebar.py', '.github/workflows/ru-pages-review.yml']
+          entries += [{'path': p, 'mode': '100644', 'type': 'blob', 'sha': None} for p in temporary]
+          pathlib.Path('review/tree.json').write_text(json.dumps({'base_tree': tree, 'tree': entries}), encoding='utf-8')
+          PY
+          tree="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input review/tree.json --jq .sha)"
+          TREE_SHA="$tree" python3 - <<'PY'
+          import json, os, pathlib
+          data = {'message': 'feat(ui): reorder, delete and insert PDF pages in the sidebar', 'tree': os.environ['TREE_SHA'], 'parents': [os.environ['GITHUB_SHA']]}
+          pathlib.Path('review/commit.json').write_text(json.dumps(data), encoding='utf-8')
+          PY
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input review/commit.json --jq .sha > review/TESTED_COMMIT.txt
+          printf '%s\n' "$GITHUB_SHA" > review/PARENT_SHA.txt
+          echo "Tested source commit (no branch moved): $(cat review/TESTED_COMMIT.txt)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Export reviewed source and verification logs
+        if: always()
+        shell: bash
+        run: |
           mkdir -p review
-          git archive --format=zip --output=review/pages-panel-source.zip HEAD \
-            crates/ui-egui/src crates/ui-egui/tests crates/ui-egui/Cargo.toml \
-            crates/engine/src Cargo.toml Cargo.lock rustfmt.toml \
-            AGENTS.md CLAUDE.md ROADMAP.md
-          git rev-parse HEAD > review/SOURCE_SHA.txt
-          sha256sum review/pages-panel-source.zip > review/SHA256SUMS.txt
+          git diff > review/changes.patch
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          paths = ['src/canvas.rs', 'src/lib.rs', 'src/panels.rs', 'src/pages_panel.rs', 'src/i18n/ru.tsv', 'tests/pages_panel.rs']
+          with ZipFile('review/reviewed-source.zip', 'w', ZIP_DEFLATED) as out:
+              for relative in paths:
+                  p = Path('crates/ui-egui') / relative
+                  if p.exists():
+                      out.write(p, str(p))
+          PY
+          rm -f review/tree.json review/commit.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: pages-panel-source-review
+          name: pages-panel-verification
           path: review/
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 2
