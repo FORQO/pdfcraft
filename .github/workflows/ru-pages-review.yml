@@ -1,0 +1,36 @@
+name: Pages panel source review
+
+on:
+  push:
+    branches: [feature/ru-ui-polish-and-releases]
+    paths: ['.github/workflows/ru-pages-review.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Archive tracked source for reproducible UI regression review
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p review
+          git archive --format=zip --output=review/pages-panel-source.zip HEAD \
+            crates/ui-egui/src crates/ui-egui/tests crates/ui-egui/Cargo.toml \
+            crates/engine/src Cargo.toml Cargo.lock rustfmt.toml \
+            AGENTS.md CLAUDE.md ROADMAP.md
+          git rev-parse HEAD > review/SOURCE_SHA.txt
+          sha256sum review/pages-panel-source.zip > review/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pages-panel-source-review
+          path: review/
+          if-no-files-found: error
+          retention-days: 1
