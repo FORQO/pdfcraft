@@ -44,6 +44,9 @@ jobs:
       - name: Test PdfCraft RU UI library
         run: cargo test --locked -p pdfcraft-ui-egui --lib
 
+      - name: Test Pages sidebar interactions
+        run: cargo test --locked -p pdfcraft-ui-egui --test pages_panel
+
       - name: Build macOS app, disk image and CLI
         shell: bash
         run: bash packaging/macos/package.sh --arch aarch64

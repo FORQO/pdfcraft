@@ -2004,3 +2004,9 @@ translation statement	Position	Должность
 	Full name	ФИО
 	Prepare statement and select text tool	Подготовить текст и выбрать инструмент добавления
 	Click a page to place the prepared text; add the director's signature separately.	Нажмите на страницу, чтобы разместить подготовленный текст, затем отдельно добавьте подпись директора.
+
+# Direct page assembly in the sidebar
+	Couldn't insert pages: {e}	Не удалось вставить страницы: {e}
+	Too many files in one drop	Слишком много файлов для одной вставки
+	Drop PDF files on the Pages panel	Перетащите файлы PDF в панель «Страницы»
+	PDF files in one drop exceed 256 MiB	Общий размер файлов PDF для одной вставки превышает 256 МиБ

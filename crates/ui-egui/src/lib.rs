@@ -74,6 +74,7 @@ mod icon_data;
 pub mod icons;
 pub mod last_session;
 mod pageboxes;
+mod pages_panel;
 mod palette;
 mod panels;
 #[cfg(not(target_arch = "wasm32"))]
@@ -1639,6 +1640,8 @@ impl eframe::App for PdfCraftApp {
         self.process_signature_images();
         let dropped = ctx.input(|i| i.raw.dropped_files.clone());
         #[cfg(not(target_arch = "wasm32"))]
+        let dropped = pages_panel::take_drop(self, dropped, ctx);
+        #[cfg(not(target_arch = "wasm32"))]
         let dropped = self.drop_on_grid(dropped, ctx);
         for f in dropped {
             // Files dropped on the Combine files tab join its list instead of opening.
@@ -1679,6 +1682,7 @@ impl eframe::App for PdfCraftApp {
         self.poll_updates();
         // Shortcuts deferred last frame: the text field has taken that frame's typing since.
         let deferred = std::mem::take(&mut self.deferred_commands);
+        pages_panel::keys(self, ctx);
         self.shortcuts(ctx);
         // Scrolling is transient: never resume after changing tabs, opening a modal/palette,
         // or returning to a window that lost focus.

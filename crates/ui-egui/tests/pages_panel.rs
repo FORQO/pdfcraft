@@ -49,10 +49,15 @@ fn harness(count: usize) -> Harness<'static, PdfCraftApp> {
 fn texts(app: &PdfCraftApp) -> Vec<String> {
     let doc = app.session.get(app.views[0].id).unwrap();
     let mut renderer = PageRenderer::new(doc.bytes.clone(), Default::default());
-    (0..renderer.page_count()).map(|page| {
-        renderer.render(RenderRequest { page, kind: RequestKind::Text, scale: 1.0, ..Default::default() })
-            .text.map(|text| text.plain_text().trim().to_string()).unwrap_or_default()
-    }).collect()
+    (0..renderer.page_count())
+        .map(|page| {
+            renderer
+                .render(RenderRequest { page, kind: RequestKind::Text, scale: 1.0, ..Default::default() })
+                .text
+                .map(|text| text.plain_text().trim().to_string())
+                .unwrap_or_default()
+        })
+        .collect()
 }
 
 fn drag(h: &mut Harness<'static, PdfCraftApp>, from: Pos2, to: Pos2) {
@@ -189,8 +194,12 @@ struct Dropped {
     bytes: Vec<u8>,
 }
 impl egui::DroppedFile for Dropped {
-    fn path(&self) -> &Path { Path::new(&self.name) }
-    fn bytes(&self) -> Result<Vec<u8>, String> { Ok(self.bytes.clone()) }
+    fn path(&self) -> &Path {
+        Path::new(&self.name)
+    }
+    fn bytes(&self) -> Result<Vec<u8>, String> {
+        Ok(self.bytes.clone())
+    }
 }
 
 fn drop_files(h: &mut Harness<'static, PdfCraftApp>, files: Vec<(&str, Vec<u8>)>) {
@@ -310,4 +319,51 @@ fn russian_selection_count_is_below_the_close_button() {
     let closes: Vec<_> = h.get_all_by_label("Закрыть").map(|node| node.rect()).collect();
     assert!(!closes.is_empty());
     assert!(closes.iter().all(|close| !close.intersects(count)), "selection count must not overlap Close");
+}
+
+#[test]
+fn moved_pages_remain_the_delete_target_without_an_extra_click() {
+    let mut h = harness(4);
+    h.get_by_label("Page 2").click();
+    h.run_steps(3);
+    let from = h.get_by_label("Page 2").rect().center();
+    let last = h.get_by_label("Page 4").rect();
+    drag(&mut h, from, pos2(last.center().x, last.bottom() - 5.0));
+    assert_eq!(texts(h.state()), ["Page 1", "Page 3", "Page 4", "Page 2"]);
+    h.key_press(Key::Delete);
+    h.run_steps(3);
+    assert_eq!(texts(h.state()), ["Page 1", "Page 3", "Page 4"]);
+}
+
+#[test]
+fn inserted_pages_are_the_delete_target_without_an_extra_click() {
+    let mut h = harness(3);
+    let page = h.get_by_label("Page 2").rect();
+    h.hover_at(pos2(page.center().x, page.top() + 3.0));
+    h.run_steps(2);
+    drop_files(&mut h, vec![("extra.pdf", fixture(2))]);
+    assert_eq!(h.state().views[0].target_pages(), [1, 2]);
+    h.key_press(Key::Backspace);
+    h.run_steps(3);
+    assert_eq!(texts(h.state()), ["Page 1", "Page 2", "Page 3"]);
+}
+
+#[test]
+fn dragging_at_the_viewport_edge_reaches_offscreen_pages() {
+    let mut h = harness(10);
+    h.set_size(vec2(1400.0, 750.0));
+    h.run_steps(5);
+    let from = h.get_by_label("Page 1").rect().center();
+    let to = pos2(from.x, 730.0);
+    h.hover_at(from);
+    h.run_steps(1);
+    h.drag_at(from);
+    h.run_steps(1);
+    h.hover_at(to);
+    h.run_steps(100);
+    h.drop_at(to);
+    h.run_steps(4);
+    let after = texts(h.state());
+    assert_eq!(after.first().map(String::as_str), Some("Page 2"));
+    assert!(after.iter().position(|text| text == "Page 1").unwrap() >= 3, "must scroll beyond the first two visible pages");
 }

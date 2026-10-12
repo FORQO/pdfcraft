@@ -25,7 +25,7 @@ impl State {
         self.bounds = None;
         self.cells.clear();
         self.drag = None;
-        self.keyboard = false;
+        // Keep focus across page moves; Delete releases ownership explicitly.
     }
 
     fn gap(&self, pointer: Pos2) -> Option<usize> {
@@ -77,13 +77,12 @@ pub(crate) fn keys(app: &mut PdfCraftApp, ctx: &egui::Context) {
         view.clear_page_selection(Some(view.current));
         return;
     }
-    let delete = ctx.input_mut(|input| {
-        input.consume_key(Modifiers::NONE, Key::Delete) || input.consume_key(Modifiers::NONE, Key::Backspace)
-    });
+    let delete = ctx.input_mut(|input| input.consume_key(Modifiers::NONE, Key::Delete) || input.consume_key(Modifiers::NONE, Key::Backspace));
     if delete && app.session.get(id).is_some_and(|doc| doc.allows_assembly() && doc.read_only_reason.is_none()) {
         // The engine also rejects removal of the last page, with a visible error.
         let pages = app.views[index].target_pages();
         app.views[index].page_strip.drag = None;
+        app.views[index].page_strip.keyboard = false;
         if app.commit_form_typing() {
             app.apply_edit(Edit::DeletePages { pages });
         }
@@ -132,7 +131,7 @@ pub(crate) fn show(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut Doc
             let picked = view.selected.contains(&index);
             let current = index == view.current;
             let label = crate::i18n::fmt(tl!("Page {label}"), &[("label", &page.label)]);
-            response.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, picked, label));
+            response.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, picked, &label));
             if current || picked || response.hovered() {
                 ui.painter().rect_filled(rect, CornerRadius::same(8), if current || picked { t.accent_soft } else { t.hover });
             }
@@ -170,14 +169,25 @@ pub(crate) fn show(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut Doc
     let external = ui.input(|input| !input.raw.hovered_files.is_empty());
     let dragging = editable && !modal && (external || view.page_strip.drag.is_some());
     if dragging && let (Some(pos), Some(gap), Some(bounds)) = (pointer, gap, view.page_strip.bounds) {
-        let y = view.page_strip.cells.iter().find(|(index, _)| *index == gap).map(|(_, rect)| rect.top() - 2.0)
+        let y = view
+            .page_strip
+            .cells
+            .iter()
+            .find(|(index, _)| *index == gap)
+            .map(|(_, rect)| rect.top() - 2.0)
             .or_else(|| view.page_strip.cells.last().map(|(_, rect)| rect.bottom() + 2.0));
         if let Some(y) = y {
             ui.painter().line_segment([pos2(bounds.left() + 10.0, y), pos2(bounds.right() - 10.0, y)], Stroke::new(3.0, t.accent));
         }
         ui.ctx().set_cursor_icon(if external { egui::CursorIcon::Copy } else { egui::CursorIcon::Grabbing });
         // Auto-scroll keeps distant gaps reachable without dropping the selection.
-        let delta = if pos.y < bounds.top() + 30.0 { 10.0 } else if pos.y > bounds.bottom() - 30.0 { -10.0 } else { 0.0 };
+        let delta = if pos.y < bounds.top() + 30.0 {
+            10.0
+        } else if pos.y > bounds.bottom() - 30.0 {
+            -10.0
+        } else {
+            0.0
+        };
         if delta != 0.0 {
             ui.scroll_with_delta_animation(vec2(0.0, delta), egui::style::ScrollAnimation::none());
             ui.ctx().request_repaint();
@@ -185,7 +195,8 @@ pub(crate) fn show(ui: &mut egui::Ui, t: &Tokens, info: &DocInfo, view: &mut Doc
     }
     if ui.input(|input| input.pointer.button_released(egui::PointerButton::Primary)) {
         if let Some(pages) = view.page_strip.drag.take()
-            && editable && !modal
+            && editable
+            && !modal
             && let Some(gap) = gap
             && let Some(edit) = move_to_gap(&pages, gap, info.pages.len())
         {
@@ -241,8 +252,11 @@ fn insert_drop(app: &mut PdfCraftApp, dropped: Vec<egui::DroppedFileHandle>, gap
         let name = file.path().file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_else(|| "dropped.pdf".into());
         let bytes = if file.path().is_absolute() {
             let mut bytes = Vec::new();
-            std::fs::File::open(file.path()).map_err(|error| error.to_string())?
-                .take((MAX_BYTES.saturating_sub(total) + 1) as u64).read_to_end(&mut bytes).map_err(|error| error.to_string())?;
+            std::fs::File::open(file.path())
+                .map_err(|error| error.to_string())?
+                .take((MAX_BYTES.saturating_sub(total) + 1) as u64)
+                .read_to_end(&mut bytes)
+                .map_err(|error| error.to_string())?;
             bytes
         } else {
             file.bytes()?
@@ -258,11 +272,13 @@ fn insert_drop(app: &mut PdfCraftApp, dropped: Vec<egui::DroppedFileHandle>, gap
     }
     // Validate every input first, then one undoable transaction. A malformed
     // second PDF must not leave the first PDF inserted without telling the user.
-    if !edits.is_empty() && app.commit_form_typing()
+    if !edits.is_empty()
+        && app.commit_form_typing()
         && app.apply_edit(Edit::Batch { label: "Insert pages".into(), edits })
         && let Some(view) = app.active.and_then(|index| app.views.get_mut(index))
     {
         view.select_pages(&(gap..at).collect::<Vec<_>>());
+        view.page_strip.keyboard = true;
     }
     Ok(())
 }

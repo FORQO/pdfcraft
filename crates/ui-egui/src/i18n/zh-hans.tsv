@@ -2055,3 +2055,9 @@
 	Search bookmarks	搜索书签
 	Source language	源语言
 	Translation verification statement	译文核实声明
+
+# Direct page assembly in the sidebar
+	Couldn't insert pages: {e}	无法插入页面：{e}
+	Too many files in one drop	一次拖放的文件过多
+	Drop PDF files on the Pages panel	将 PDF 文件拖放到“页面”面板
+	PDF files in one drop exceed 256 MiB	一次拖放的 PDF 文件总大小超过 256 MiB
