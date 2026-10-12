@@ -291,6 +291,8 @@ pub struct DocView {
     /// The page-grid gap under the pointer this frame (where dropped files go), when it can
     /// take pages.
     pub grid_gap: Option<usize>,
+    /// Transient sidebar gestures and hit testing; never persisted.
+    pub(crate) page_strip: crate::pages_panel::State,
 }
 
 /// Organize-toolbar actions that need the app (file pickers, new tabs, dialogs).
@@ -388,6 +390,7 @@ impl DocView {
             pending_action: None,
             insert_at: None,
             grid_gap: None,
+            page_strip: Default::default(),
             comments: Default::default(),
             measure: Default::default(),
             forms: Default::default(),
@@ -410,6 +413,7 @@ impl DocView {
     /// The document's content or page list changed (an edit, undo or redo): drop caches and
     /// adopt the new page geometry, keeping the reader's place where possible.
     pub fn document_changed(&mut self, info: &DocInfo) {
+        self.page_strip.invalidate();
         self.invalidate_content();
         self.page_count = info.pages.len();
         self.page_heights = info.pages.iter().map(|p| p.height).collect();

@@ -2045,3 +2045,13 @@ comment menu	Edit	Bearbeiten
 signature pad	Type	Tippen
 action wizard	Start	Starten
 	Reopen the files that were open when PdfCraft last closed	Beim Start die Dateien wieder öffnen, die beim letzten Beenden von PdfCraft geöffnet waren
+
+# PdfCraft UI: translation-attestation and bookmark-search labels
+	Click a page to place the prepared text; add the director's signature separately.	Klicke auf eine Seite, um den vorbereiteten Text einzufügen; füge die Unterschrift der Geschäftsführung separat hinzu.
+	Editable statement for translations; not a notarial certificate or digital signature.	Bearbeitbare Erklärung für Übersetzungen; keine notarielle Beglaubigung oder digitale Signatur.
+	Full name	Vollständiger Name
+	Organization	Organisation
+	Prepare statement and select text tool	Erklärung vorbereiten und Textwerkzeug auswählen
+	Search bookmarks	Lesezeichen durchsuchen
+	Source language	Ausgangssprache
+	Translation verification statement	Bestätigung der Übersetzung

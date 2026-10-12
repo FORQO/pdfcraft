@@ -12,7 +12,7 @@ use egui::{Align, Layout};
 use crate::{PdfCraftApp, theme, widgets};
 
 /// Where every PdfCraft release is listed.
-pub const RELEASES_PAGE: &str = "https://github.com/storytold/pdfcraft/releases";
+pub const RELEASES_PAGE: &str = "https://github.com/maxliv234-star/pdfcraft/releases";
 
 /// The latest published release.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,7 +33,8 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
 }
 
 fn parse(v: &str) -> Option<(u64, u64, u64)> {
-    let v = v.trim().trim_start_matches(['v', 'V']);
+    let v = v.trim();
+    let v = v.strip_prefix("ru-").unwrap_or(v).trim_start_matches(['v', 'V']);
     let core = v.split(['-', '+']).next()?;
     let mut parts = core.split('.');
     let mut next = |required: bool| match parts.next() {
@@ -135,7 +136,7 @@ pub(crate) fn dialog(app: &mut PdfCraftApp, ctx: &egui::Context) {
                 });
             }
             Check::Done(Ok(r)) if is_newer(&r.version, current) => {
-                let version = r.version.trim_start_matches(['v', 'V']);
+                let version = r.version.trim_start_matches("ru-").trim_start_matches(['v', 'V']);
                 ui.label(egui::RichText::new(crate::i18n::fmt(tl!("PdfCraft {v} is available."), &[("v", version)])).strong());
                 ui.label(
                     egui::RichText::new(crate::i18n::fmt(

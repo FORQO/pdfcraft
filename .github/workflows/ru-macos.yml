@@ -1,0 +1,81 @@
+name: PdfCraft RU macOS (Apple Silicon)
+
+on:
+  push:
+    branches:
+      - feature/ru-edition
+  pull_request:
+    branches:
+      - feature/ru-edition
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ru-macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-apple-silicon:
+    name: Build macOS ARM64 DMG (M1/M2/M3/M4)
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+      MACOS_SIGN_IDENTITY: '-'
+      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
+    steps:
+      - name: Check out PdfCraft RU
+        uses: actions/checkout@v4
+
+      - name: Install Rust (Apple Silicon)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ru-macos-arm64
+
+      - name: Test PdfCraft RU UI library
+        run: cargo test --locked -p pdfcraft-ui-egui --lib
+
+      - name: Test Pages sidebar interactions
+        run: cargo test --locked -p pdfcraft-ui-egui --test pages_panel
+
+      - name: Build macOS app, disk image and CLI
+        shell: bash
+        run: bash packaging/macos/package.sh --arch aarch64
+
+      - name: Add checksums and install instructions
+        shell: bash
+        run: |
+          cd dist/release
+          shasum -a 256 ./*-macos-aarch64.* > SHA256SUMS.txt
+          cat > README-MAC.txt <<'EOF'
+          PdfCraft RU Edition for Apple Silicon (M1/M2/M3/M4)
+          --------------------------------------------------
+          1. Open the *.dmg file and drag PdfCraft.app into Applications.
+          2. Launch PdfCraft.app. This development build is ad-hoc signed,
+             not Apple-notarized. macOS may block it on the first launch.
+          3. If blocked, check System Settings > Privacy & Security and
+             use Open Anyway for PdfCraft after attempting to open it.
+          4. In PdfCraft settings, select Russian as the interface language.
+          This is an experimental build from a personal development fork.
+          EOF
+
+      - name: Upload macOS ARM64 packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: PdfCraft-RU-macOS-AppleSilicon
+          path: |
+            dist/release/*-macos-aarch64.dmg
+            dist/release/*-macos-aarch64.zip
+            dist/release/SHA256SUMS.txt
+            dist/release/README-MAC.txt
+          if-no-files-found: error
+          retention-days: 14

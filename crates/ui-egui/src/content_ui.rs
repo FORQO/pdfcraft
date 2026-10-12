@@ -38,6 +38,8 @@ pub struct ContentView {
     /// The selected added item: (page, index among the page's items).
     pub selected: Option<(usize, usize)>,
     pub draft: Option<TextDraft>,
+    /// Initial content to populate when the user next clicks a page in Add Text mode.
+    pub pending_text: Option<String>,
     /// Select the item an add creates (the page's item count before it).
     pub select_added: Option<(usize, usize)>,
     grab: Option<(usize, Grab, Pos2)>,
@@ -163,7 +165,7 @@ pub(crate) fn page_input(
                 page,
                 index: None,
                 rect: [at[0], at[1] - style.size * 1.2, at[0] + 200.0, at[1]],
-                text: String::new(),
+                text: cv.pending_text.take().unwrap_or_default(),
                 style,
                 focus: true,
             });

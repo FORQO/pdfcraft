@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # Run the full workspace suite on the final RU integration commit too, not
+    # only on PR merge refs. Release tags must use this tested branch tip.
+    branches: [main, feature/ru-edition]
   pull_request:
   workflow_dispatch:
   schedule:
@@ -53,6 +55,40 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Test RU release CI gate against green and red run histories
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Latest attempt wins; successful checks from other branches or PRs
+          # must never make an untested release commit appear safe.
+          sample='{"workflow_runs":[
+            {"head_branch":"feature/ru-edition","event":"push","name":"CI","run_number":8,"run_attempt":1,"conclusion":"failure"},
+            {"head_branch":"feature/ru-edition","event":"push","name":"CI","run_number":8,"run_attempt":2,"conclusion":"success"},
+            {"head_branch":"feature/ru-ui-polish-and-releases","event":"push","name":"CI","run_number":9,"run_attempt":1,"conclusion":"failure"},
+            {"head_branch":"feature/ru-edition","event":"push","name":"PdfCraft RU Windows build","run_number":5,"run_attempt":1,"conclusion":"failure"},
+            {"head_branch":"feature/ru-edition","event":"push","name":"PdfCraft RU macOS (Apple Silicon)","run_number":5,"run_attempt":1,"conclusion":null},
+            {"head_branch":"feature/ru-edition","event":"pull_request","name":"PdfCraft RU macOS (Apple Silicon)","run_number":6,"run_attempt":1,"conclusion":"success"}]}'
+          query() { jq -r --arg flow "$1" -f .github/scripts/ru-release-ci.jq <<<"$sample"; }
+          test "$(query CI)" = "success"
+          test "$(query 'PdfCraft RU Windows build')" = "failure"
+          test "$(query 'PdfCraft RU macOS (Apple Silicon)')" = "missing"
+          test "$(query 'No such workflow')" = "missing"
+
+      - name: Verify RU Windows triggers do not duplicate PR builds
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/ru-windows.yml').read_text(encoding='utf-8')
+          triggers = workflow.split("\npermissions:", 1)[0]
+          assert "  push:\n    branches: [feature/ru-edition]\n" in triggers, "only integration commits may trigger push builds"
+          assert "  pull_request:\n    branches: [feature/ru-edition]\n" in triggers, "PR builds must remain enabled"
+          assert "  workflow_dispatch:\n" in triggers, "manual build trigger must remain enabled"
+          PY
+
       - name: Format
         if: runner.os == 'Linux'
         run: cargo fmt --all -- --check
@@ -101,9 +137,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      # Use a pinned native installer to avoid depending on Docker Hub image pulls.
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@ab6895351a88b908e96a4697860d4ffea5e57dbe # v2
         with:
-          command: check
+          tool: cargo-deny
+      - name: Check dependency licences and advisories
+        run: cargo deny check
 
   fuzz:
     name: fuzz (mutation, 15 min)

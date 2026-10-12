@@ -33,6 +33,14 @@ use catalog::Catalog;
 /// The `language` preference value that follows the system locale.
 pub const AUTO: &str = "auto";
 
+/// Public product name; internal crate, CLI and persistence identifiers remain "pdfcraft".
+pub const PRODUCT_NAME: &str = "Veyra PDF";
+
+/// Rebrand a localized legacy string without changing its stable catalog lookup key.
+pub fn branded(text: &str) -> String {
+    text.replace("PdfCraft", PRODUCT_NAME)
+}
+
 /// One supported UI language.
 pub struct LangInfo {
     /// BCP 47 code, lowercase (`ja`, `zh-hans`, `pt-br`). Also the `language` preference value.
@@ -320,8 +328,10 @@ pub fn tr_id<'a>(lang: Lang, id: &str, label: &'a str) -> &'a str {
 /// Fill `{name}` placeholders in one pass. Unknown placeholders are left as written, and inserted
 /// values are never read as templates again, so a file name containing `{n}` stays intact.
 pub fn fmt(template: &str, args: &[(&str, &str)]) -> String {
+    // Rebrand the template before interpolation: a user's filename must never be rewritten.
+    let template = branded(template);
     let mut out = String::with_capacity(template.len());
-    let mut rest = template;
+    let mut rest = template.as_str();
     while let Some((before, after_open)) = rest.split_once('{') {
         out.push_str(before);
         let Some((name, after_close)) = after_open.split_once('}') else {
@@ -488,6 +498,26 @@ mod tests {
         assert_eq!(tr_id(JA(), "no.such.id", "File"), "ファイル");
         assert_eq!(tr_ctx(JA(), "no such context", "File"), "ファイル");
         assert!(has(JA(), "Save") && !has(Lang::EN, "Save"));
+    }
+
+    /// PDF certification is a signing action, not a certificate object. Keep
+    /// Russian menu labels consistent with the existing Certify action.
+    #[test]
+    fn russian_pdf_certification_labels_are_actions() {
+        let ru = Lang::from_code("ru").expect("ru registered");
+        assert_eq!(tr(ru, "Certify"), "Сертифицировать");
+        assert_eq!(tr(ru, "Certify (visible signature)"), "Сертифицировать (видимая подпись)");
+        assert_eq!(tr(ru, "Certify (invisible signature)"), "Сертифицировать (невидимая подпись)");
+    }
+
+    /// Form feeds in text exports are page separators, not file-format conversions.
+    #[test]
+    fn russian_text_export_describes_page_breaks() {
+        let ru = Lang::from_code("ru").expect("ru registered");
+        assert_eq!(
+            tr(ru, "Plain text in reading order; pages are separated by form feeds."),
+            "Обычный текст в порядке чтения; страницы разделены символами разрыва страницы."
+        );
     }
 
     #[test]
@@ -1443,6 +1473,17 @@ mod tests {
         assert_eq!(fmt(t("{n} pages selected"), &[("n", "3")]), "Избрани страници: 3");
         assert_eq!(tr(bg, "CheckBox"), "Квадратче за отметка");
         set_current(Lang::EN);
+    }
+
+    #[test]
+    fn veyra_brand_is_shown_in_every_supported_language() {
+        for lang in Lang::all() {
+            let greeting = branded(tr(lang, "Welcome to PdfCraft"));
+            assert!(greeting.contains(PRODUCT_NAME), "{}: {greeting}", lang.code());
+            assert!(!greeting.contains("PdfCraft"), "{}: {greeting}", lang.code());
+        }
+        // A user-supplied value that happens to say PdfCraft is data, not branding.
+        assert_eq!(fmt("File: {name}", &[("name", "PdfCraft notes.pdf")]), "File: PdfCraft notes.pdf");
     }
 
     /// Every bundled catalog is well-formed and consistent with its sources.

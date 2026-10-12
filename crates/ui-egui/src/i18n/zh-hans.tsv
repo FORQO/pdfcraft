@@ -2045,3 +2045,19 @@
 	Choose a PNG or JPEG image (up to 4 MiB). Transparency is preserved.	选择 PNG 或 JPEG 图像（最大 4 MiB）。透明度会保留。
 	Couldn't import the signature image: {e}	无法导入签名图像：{e}
 	Go to page…	转到页面…
+
+# PdfCraft UI: translation-attestation and bookmark-search labels
+	Click a page to place the prepared text; add the director's signature separately.	点击页面以放置准备好的文本；请另行添加负责人签名。
+	Editable statement for translations; not a notarial certificate or digital signature.	可编辑的译文声明；并非公证证明或数字签名。
+	Full name	姓名
+	Organization	机构
+	Prepare statement and select text tool	准备声明并选择文本工具
+	Search bookmarks	搜索书签
+	Source language	源语言
+	Translation verification statement	译文核实声明
+
+# Direct page assembly in the sidebar
+	Couldn't insert pages: {e}	无法插入页面：{e}
+	Too many files in one drop	一次拖放的文件过多
+	Drop PDF files on the Pages panel	将 PDF 文件拖放到“页面”面板
+	PDF files in one drop exceed 256 MiB	一次拖放的 PDF 文件总大小超过 256 MiB

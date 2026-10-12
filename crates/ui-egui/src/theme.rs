@@ -148,6 +148,23 @@ pub const SYSTEM_FALLBACK: &str = "system-fallback";
 pub fn installed_font_definitions(prefer_hans: bool) -> FontDefinitions {
     #[cfg_attr(target_arch = "wasm32", expect(unused_mut))]
     let mut fonts = font_definitions_for(prefer_hans);
+    // Windows faces are installed only at runtime. Keeping them out of
+    // `font_definitions_for` makes bundled/script fallback order reproducible in tests,
+    // builds and screenshots on every OS. Never redistribute the font bytes.
+    #[cfg(target_os = "windows")]
+    if std::env::var_os("PDFCRAFT_SYSTEM_FONTS").is_none_or(|value| value != "0") {
+        if let Ok(bytes) = std::fs::read(r"C:\Windows\Fonts\segoeui.ttf") {
+            fonts.font_data.insert("Segoe UI".to_owned(), Arc::new(FontData::from_owned(bytes)));
+            fonts.families.entry(FontFamily::Proportional).or_default().push("Segoe UI".to_owned());
+        }
+
+        if let Ok(bytes) = std::fs::read(r"C:\Windows\Fonts\seguisb.ttf") {
+            fonts.font_data.insert("Segoe UI Semibold".to_owned(), Arc::new(FontData::from_owned(bytes)));
+            for family in ["medium", "semibold"] {
+                fonts.families.entry(FontFamily::Name(family.into())).or_default().push("Segoe UI Semibold".to_owned());
+            }
+        }
+    }
     #[cfg(not(target_arch = "wasm32"))]
     if let Some(data) = crate::system_fonts::fallback() {
         fonts.font_data.insert(SYSTEM_FALLBACK.to_owned(), data);
@@ -158,7 +175,8 @@ pub fn installed_font_definitions(prefer_hans: bool) -> FontDefinitions {
     fonts
 }
 
-/// The interface fonts: Inter (and JetBrains Mono for code) first, then egui's defaults, then
+/// The interface fonts: Ubuntu Light (bundled with egui) for body text, Inter for emphasis,
+/// JetBrains Mono for code, then egui's fallback faces, then
 /// the CJK, Arabic and Telugu faces of the optional craft-fonts build input as the last fallback
 /// in every family. Without craft-fonts there is no Japanese, Chinese, Arabic or Telugu face here.
 pub fn font_definitions() -> FontDefinitions {
@@ -178,7 +196,18 @@ pub fn font_definitions_for(prefer_hans: bool) -> FontDefinitions {
     add(&mut fonts, "Inter-Medium", include_bytes!("../../../assets/fonts/Inter-Medium.ttf"));
     add(&mut fonts, "Inter-SemiBold", include_bytes!("../../../assets/fonts/Inter-SemiBold.ttf"));
     add(&mut fonts, "JetBrainsMono", include_bytes!("../../../assets/fonts/JetBrainsMono-Regular.ttf"));
-    fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "Inter".to_owned());
+    // Ubuntu Light is already included in egui under the Ubuntu Font Licence.
+    // Use its more open, humanist shapes for everyday reading, while retaining
+    // Inter as a fallback and Inter Medium / Semibold for headings.
+    // Do not copy or bundle proprietary Windows system fonts.
+    let body_font = if fonts.font_data.contains_key("Ubuntu-Light") { "Ubuntu-Light" } else { "Inter" };
+    let proportional = fonts.families.entry(FontFamily::Proportional).or_default();
+    // Keep Inter as a real fallback for glyphs Ubuntu Light does not cover.
+    proportional.retain(|face| face != body_font && face != "Inter");
+    proportional.insert(0, body_font.to_owned());
+    if body_font != "Inter" {
+        proportional.insert(1, "Inter".to_owned());
+    }
     fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "JetBrainsMono".to_owned());
     // The same static bytes pdfcraft-fonts uses for Japanese/Chinese text in PDFs: one copy, not two.
     for face in pdfcraft_fonts::ui_cjk_fonts(prefer_hans) {
@@ -210,22 +239,6 @@ pub fn font_definitions_for(prefer_hans: bool) -> FontDefinitions {
         let mut stack = vec![primary.to_owned()];
         stack.extend(fallback.iter().cloned());
         fonts.families.insert(FontFamily::Name(fam.into()), stack);
-    }
-    // PDFCRAFT_RU_WINDOWS_FONT: prefer the local Windows UI typeface.
-    // Keep bundled Inter/CJK fonts as fallback. No Windows fonts are redistributed.
-    #[cfg(target_os = "windows")]
-    {
-        if let Ok(bytes) = std::fs::read(r"C:\Windows\Fonts\segoeui.ttf") {
-            fonts.font_data.insert("Segoe UI".to_owned(), Arc::new(FontData::from_owned(bytes)));
-            fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "Segoe UI".to_owned());
-        }
-
-        if let Ok(bytes) = std::fs::read(r"C:\Windows\Fonts\seguisb.ttf") {
-            fonts.font_data.insert("Segoe UI Semibold".to_owned(), Arc::new(FontData::from_owned(bytes)));
-            for family in ["medium", "semibold"] {
-                fonts.families.entry(FontFamily::Name(family.into())).or_default().insert(0, "Segoe UI Semibold".to_owned());
-            }
-        }
     }
     fonts
 }
@@ -284,15 +297,15 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     }
     ctx.set_visuals(v);
     ctx.global_style_mut(|s| {
-        s.spacing.item_spacing = egui::vec2(8.0, 6.0);
-        s.spacing.button_padding = egui::vec2(10.0, 5.0);
+        s.spacing.item_spacing = egui::vec2(8.0, 7.0);
+        s.spacing.button_padding = egui::vec2(11.0, 6.0);
         s.spacing.menu_margin = egui::Margin::same(6);
         s.spacing.scroll.bar_width = 8.0;
         s.spacing.scroll.floating = true;
-        s.text_styles.insert(egui::TextStyle::Body, regular(13.0));
-        s.text_styles.insert(egui::TextStyle::Button, regular(13.0));
-        s.text_styles.insert(egui::TextStyle::Small, regular(11.0));
-        s.text_styles.insert(egui::TextStyle::Heading, semibold(17.0));
+        s.text_styles.insert(egui::TextStyle::Body, regular(14.0));
+        s.text_styles.insert(egui::TextStyle::Button, regular(13.5));
+        s.text_styles.insert(egui::TextStyle::Small, regular(12.0));
+        s.text_styles.insert(egui::TextStyle::Heading, semibold(18.0));
         s.interaction.tooltip_delay = 0.35;
     });
 }
@@ -312,6 +325,32 @@ mod tests {
         };
         let (x, y) = (lum(a) + 0.05, lum(b) + 0.05);
         x.max(y) / x.min(y)
+    }
+
+    #[test]
+    fn body_font_keeps_inter_before_optional_script_fallbacks() {
+        let defs = font_definitions();
+        let stack = &defs.families[&FontFamily::Proportional];
+        let body = if defs.font_data.contains_key("Ubuntu-Light") { "Ubuntu-Light" } else { "Inter" };
+        assert_eq!(stack.first().map(String::as_str), Some(body));
+        let inter = stack.iter().position(|name| name == "Inter").expect("Inter must be in the proportional fallback stack");
+        assert_eq!(inter, usize::from(body != "Inter"), "Inter follows Ubuntu Light when it is available");
+        assert_eq!(stack.iter().filter(|name| name.as_str() == "Inter").count(), 1);
+        if let Some(cjk) = stack.iter().position(|name| name.starts_with("BIZ UDPGothic")) {
+            assert!(inter < cjk, "Inter must precede optional Japanese fallback");
+        }
+    }
+
+    /// Bundled definitions must not include installed OS faces: on Windows a
+    /// trailing Segoe UI used to break the craft-fonts ordering regression test.
+    #[test]
+    fn bundled_font_stacks_exclude_system_faces() {
+        for defs in [font_definitions_for(false), font_definitions_for(true)] {
+            for name in ["Segoe UI", "Segoe UI Semibold", SYSTEM_FALLBACK] {
+                assert!(!defs.font_data.contains_key(name), "{name} must be runtime-only");
+                assert!(defs.families.values().all(|stack| !stack.iter().any(|font| font == name)));
+            }
+        }
     }
 
     #[test]

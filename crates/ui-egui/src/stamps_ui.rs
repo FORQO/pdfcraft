@@ -9,6 +9,92 @@ use serde::{Deserialize, Serialize};
 use crate::theme::{self, Tokens};
 use crate::{Dialog, PdfCraftApp, QuickTool, widgets};
 
+/// Editable wording for a company representative's translation statement.
+/// This creates text to be placed into a PDF, not a digital or notarial signature.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TranslationStatementDraft {
+    pub from_language: String,
+    pub organization: String,
+    pub signer: String,
+    pub position: String,
+    pub date: String,
+}
+
+impl Default for TranslationStatementDraft {
+    fn default() -> Self {
+        Self {
+            from_language: String::new(),
+            organization: String::new(),
+            signer: String::new(),
+            position: "Директор".to_owned(),
+            date: String::new(),
+        }
+    }
+}
+
+impl TranslationStatementDraft {
+    pub fn text(&self) -> String {
+        let mut lines = vec!["ПЕРЕВОД ВЕРЕН".to_owned()];
+        if !self.from_language.trim().is_empty() {
+            lines.push(format!("Перевод с языка: {}", self.from_language.trim()));
+        }
+        lines.push("Соответствие перевода представленному документу подтверждаю.".to_owned());
+        if !self.organization.trim().is_empty() {
+            lines.push(format!("Организация: {}", self.organization.trim()));
+        }
+        let position = self.position.trim();
+        let signer = self.signer.trim();
+        lines.push(format!("{position} __________________ / {signer}"));
+        if !self.date.trim().is_empty() {
+            lines.push(format!("Дата: {}", self.date.trim()));
+        }
+        lines.join("\n")
+    }
+}
+
+/// Copy a customisable translation statement, then select the existing PDF text tool.
+/// The user places the text on a page and supplies an actual signature separately.
+fn translation_statement_section(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
+    let mut copy = false;
+    ui.collapsing(tl!("Translation verification statement"), |ui| {
+        let draft = &mut app.translation_statement;
+        ui.label(
+            egui::RichText::new(tl!("Editable statement for translations; not a notarial certificate or digital signature."))
+                .small()
+                .color(t.text_muted),
+        );
+        egui::Grid::new("ru-translation-statement").num_columns(2).spacing([8.0, 8.0]).show(ui, |ui| {
+            for (label, value) in [
+                (tl!("Source language"), &mut draft.from_language),
+                (tl!("Organization"), &mut draft.organization),
+                (tl!("Position"), &mut draft.position),
+                (tl!("Full name"), &mut draft.signer),
+                (tl!("Date"), &mut draft.date),
+            ] {
+                let caption = ui.label(label);
+                ui.add(egui::TextEdit::singleline(value).desired_width(160.0)).labelled_by(caption.id);
+                ui.end_row();
+            }
+        });
+        if ui.button(tl!("Prepare statement and select text tool")).clicked() {
+            copy = true;
+        }
+        ui.label(
+            egui::RichText::new(tl!("Click a page to place the prepared text; add the director's signature separately.")).small().color(t.text_faint),
+        );
+    });
+    if copy {
+        let text = app.translation_statement.text();
+        ui.ctx().copy_text(text.clone());
+        if let Some((index, _)) = app.active_ids() {
+            app.views[index].content.pending_text = Some(text);
+        }
+        app.quick_tool = QuickTool::AddText;
+        app.left = crate::LeftPanel::Tool("edit");
+        app.left_open = true;
+    }
+}
+
 /// Stamp files larger than this aren't kept in the library (it lives in the app's settings).
 pub const MAX_STAMP_BYTES: usize = 4 << 20;
 
@@ -126,6 +212,8 @@ pub(crate) fn palette_section(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Toke
     if widgets::pill_button(ui, tl!("Create custom stamp…"), false).on_hover_text(tl!("From a PDF page or an image")).clicked() {
         app.pick_stamp_file();
     }
+    ui.add_space(8.0);
+    translation_statement_section(app, ui, t);
 }
 
 impl PdfCraftApp {
@@ -185,4 +273,32 @@ pub(crate) fn decode(v: &serde_json::Value) -> Vec<CustomStamp> {
     v.as_array()
         .map(|a| a.iter().filter_map(|x| serde_json::from_value::<CustomStamp>(x.clone()).ok()).filter(|s| s.data.len() <= MAX_STAMP_BYTES).collect())
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod translation_statement_tests {
+    use super::TranslationStatementDraft;
+
+    #[test]
+    fn translation_statement_contains_signer_and_date() {
+        let d = TranslationStatementDraft {
+            from_language: "английского".into(),
+            organization: "ООО Пример".into(),
+            signer: "И. И. Иванов".into(),
+            position: "Директор".into(),
+            date: "09.10.2026".into(),
+        };
+        let text = d.text();
+        assert!(text.starts_with("ПЕРЕВОД ВЕРЕН"));
+        assert!(text.contains("ООО Пример"));
+        assert!(text.contains("Директор __________________ / И. И. Иванов"));
+        assert!(text.contains("Дата: 09.10.2026"));
+    }
+
+    #[test]
+    fn translation_statement_works_without_optional_fields() {
+        let text = TranslationStatementDraft::default().text();
+        assert!(text.contains("ПЕРЕВОД ВЕРЕН"));
+        assert!(text.contains("Директор"));
+    }
 }

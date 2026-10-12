@@ -127,6 +127,7 @@
 	Signatures	Подписи
 	Accessibility Checker	Проверка доступности
 	Search	Поиск
+	Search bookmarks	Поиск по закладкам
 	Compare	Сравнить
 	Page thumbnails	Миниатюры страниц
 	Form fields	Поля формы
@@ -178,7 +179,7 @@
 	Replace text	Заменить текст
 	Attach a file	Прикрепить файл
 	Erase drawings	Стереть рисунки
-	Flatten comments	Расплющить комментарии
+	Flatten comments	Встроить комментарии в содержимое страницы
 	Import comments…	Импортировать комментарии…
 	Add a stamp	Добавить штамп
 	Export all comments to data file…	Экспортировать все комментарии в файл данных…
@@ -224,8 +225,8 @@
 	Add a date field	Добавить поле даты
 	Add a digital signature field	Добавить поле цифровой подписи
 	Digitally sign	Подписать цифровой подписью
-	Certify (visible signature)	Сертификат (видимая подпись)
-	Certify (invisible signature)	Сертификат (невидимая подпись)
+	Certify (visible signature)	Сертифицировать (видимая подпись)
+	Certify (invisible signature)	Сертифицировать (невидимая подпись)
 	Validate all signatures	Проверить все подписи
 	Signatures panel	Панель подписей
 	Fill & Sign: add text	Заполнить и подписать: добавить текст
@@ -702,7 +703,7 @@
 	Exclude images smaller than	Исключить изображения меньше
 	No limit	Без ограничений
 	Each image once, named after the document and page. JPEG images are saved unchanged; others as PNG.	Каждое изображение один раз, по имени документа и страницы. JPEG сохраняются без изменений, остальные — как PNG.
-	Plain text in reading order; pages are separated by form feeds.	Обычный текст в порядке чтения; страницы разделены переводами формата.
+	Plain text in reading order; pages are separated by form feeds.	Обычный текст в порядке чтения; страницы разделены символами разрыва страницы.
 	Create {what}	Создать {what}
 	initials	инициалы
 	signature	подпись
@@ -1995,3 +1996,17 @@
 	Created a PDF from {n} files; left out: {names}	PDF создан из файлов: {n}; пропущены: {names}
 	Created a PDF from the first {n} files	PDF создан из первых файлов: {n}
 	Go to page…	Перейти на страницу…
+	Translation verification statement	Заверение перевода
+	Editable statement for translations; not a notarial certificate or digital signature.	Настраиваемая отметка о переводе. Не является нотариальным удостоверением или электронной подписью.
+	Source language	Язык оригинала
+	Organization	Организация
+translation statement	Position	Должность
+	Full name	ФИО
+	Prepare statement and select text tool	Подготовить текст и выбрать инструмент добавления
+	Click a page to place the prepared text; add the director's signature separately.	Нажмите на страницу, чтобы разместить подготовленный текст, затем отдельно добавьте подпись директора.
+
+# Direct page assembly in the sidebar
+	Couldn't insert pages: {e}	Не удалось вставить страницы: {e}
+	Too many files in one drop	Слишком много файлов для одной вставки
+	Drop PDF files on the Pages panel	Перетащите файлы PDF в панель «Страницы»
+	PDF files in one drop exceed 256 MiB	Общий размер файлов PDF для одной вставки превышает 256 МиБ

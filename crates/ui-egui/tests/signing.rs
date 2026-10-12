@@ -181,8 +181,10 @@ fn certifying_without_a_visible_signature() {
     h.get_by_label("Continue").click();
     h.run_steps(2);
     assert_eq!(h.state().digital_ids.len(), 1);
-    h.get_by_label("Continue").click();
-    h.run_steps(2);
+    // Imported IDs go straight to signing confirmation, skipping the ID picker.
+    // This regression test still verifies the resulting certified, invisible PDF.
+    assert_eq!(h.state().sign_draft.as_ref().map(|d| d.step), Some(SignStep::SignAs));
+    assert!(h.state().sign_draft.as_ref().and_then(|d| d.selected).is_some());
     h.get_by_label("Certify as \"Test Signer EC\"");
     h.get_by_label("Permitted actions after certifying");
     h.state_mut().sign_draft.as_mut().unwrap().password = "test".into();

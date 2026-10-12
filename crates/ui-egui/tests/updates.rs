@@ -9,7 +9,7 @@ use pdfcraft_ui_egui::updates::{Release, UpdateSource, is_newer};
 
 fn source(answer: Result<&str, &str>) -> UpdateSource {
     let answer = answer.map(str::to_string).map_err(str::to_string);
-    Arc::new(move || answer.clone().map(|v| Release { url: format!("https://github.com/storytold/pdfcraft/releases/tag/{v}"), version: v }))
+    Arc::new(move || answer.clone().map(|v| Release { url: format!("https://github.com/maxliv234-star/pdfcraft/releases/tag/{v}"), version: v }))
 }
 
 fn harness(answer: Result<&str, &str>) -> Harness<'static, PdfCraftApp> {
@@ -36,6 +36,7 @@ fn settle(h: &mut Harness<'static, PdfCraftApp>) {
 #[test]
 fn versions_compare_by_number() {
     assert!(is_newer("v0.2.0", "0.1.1"));
+    assert!(is_newer("ru-v0.2.0", "0.1.1"), "our ru-v release tags must be recognized");
     assert!(is_newer("v0.1.10", "0.1.9"));
     assert!(is_newer("1", "0.9.9"));
     assert!(!is_newer("v0.1.1", "0.1.1"));
@@ -48,10 +49,10 @@ fn versions_compare_by_number() {
 
 #[test]
 fn a_newer_release_is_offered_for_download() {
-    let mut h = harness(Ok("v99.0.0"));
+    let mut h = harness(Ok("ru-v99.0.0"));
     h.state_mut().execute("help.check_updates");
     settle(&mut h);
-    h.get_by_label_contains("PdfCraft 99.0.0 is available");
+    h.get_by_label_contains("Veyra PDF 99.0.0 is available");
     h.get_by_label("Download");
     h.get_by_label("Later").click();
     h.run_steps(3);
@@ -85,7 +86,7 @@ fn nothing_is_asked_until_the_user_checks() {
         let counted = counted.clone();
         app.update_source = Some(Arc::new(move || {
             counted.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            Ok(Release { version: "v99.0.0".into(), url: "https://github.com/storytold/pdfcraft/releases/tag/v99.0.0".into() })
+            Ok(Release { version: "ru-v99.0.0".into(), url: "https://github.com/maxliv234-star/pdfcraft/releases/tag/ru-v99.0.0".into() })
         }));
         app
     });
@@ -95,5 +96,5 @@ fn nothing_is_asked_until_the_user_checks() {
     h.state_mut().execute("help.check_updates");
     settle(&mut h);
     assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
-    h.get_by_label_contains("PdfCraft 99.0.0 is available");
+    h.get_by_label_contains("Veyra PDF 99.0.0 is available");
 }

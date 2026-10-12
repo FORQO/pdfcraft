@@ -1,0 +1,137 @@
+name: PdfCraft RU - draft Windows and macOS release
+
+# Publish a tested ru-v* tag to prepare a draft. Publishing stays a manual decision.
+on:
+  push:
+    tags:
+      - 'ru-v*'
+
+permissions:
+  contents: read
+  actions: read # Read completed CI/build workflow runs for this exact release SHA.
+
+concurrency:
+  group: ru-draft-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    if: github.repository == 'maxliv234-star/pdfcraft'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require tag on current tested RU edition branch
+        shell: bash
+        run: |
+          git fetch --no-tags origin refs/heads/feature/ru-edition:refs/remotes/origin/feature/ru-edition
+          tagged="$(git rev-parse HEAD)"
+          branch_head="$(git rev-parse refs/remotes/origin/feature/ru-edition)"
+          if [ "$tagged" != "$branch_head" ]; then
+            echo "::error::Tag must point to the current feature/ru-edition head after CI and manual QA"
+            exit 1
+          fi
+      - name: Require successful full CI and both desktop builds for this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tagged="$(git rev-parse HEAD)"
+          # Check only push runs on the actual integration branch, not PR
+          # merge refs or successful runs from a previous commit.
+          runs="$(gh api "repos/$GH_REPO/actions/runs?head_sha=$tagged&per_page=100")"
+          if jq -e '.total_count > 100' <<<"$runs" >/dev/null; then
+            echo "::error::More than 100 runs for release commit; refuse an incomplete CI check"
+            exit 1
+          fi
+          for flow in "CI" "PdfCraft RU Windows build" "PdfCraft RU macOS (Apple Silicon)"; do
+            result="$(jq -r --arg flow "$flow" -f .github/scripts/ru-release-ci.jq <<<"$runs")"
+            if [ "$result" != "success" ]; then
+              echo "::error::Release commit $tagged: $flow is $result (must be success on feature/ru-edition)"
+              exit 1
+            fi
+          done
+          echo "Full CI, Windows x64 and macOS Apple Silicon succeeded for $tagged"
+
+  windows:
+    needs: [preflight]
+    if: github.repository == 'maxliv234-star/pdfcraft'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ru-release-windows
+      - name: Test PDF interface library
+        run: cargo test --locked -p pdfcraft-ui-egui --lib
+      - name: Compile Windows desktop application
+        run: cargo build --release --locked -p pdfcraft
+      - name: Package Windows ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release-assets -Force | Out-Null
+          Copy-Item target/release/pdfcraft.exe release-assets/PdfCraft-RU.exe
+          Compress-Archive -Path release-assets/PdfCraft-RU.exe -DestinationPath release-assets/PdfCraft-RU-Windows-x64.zip -Force
+          Remove-Item release-assets/PdfCraft-RU.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ru-windows-package
+          path: release-assets/*.zip
+          if-no-files-found: error
+
+  macos:
+    needs: [preflight]
+    if: github.repository == 'maxliv234-star/pdfcraft'
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+      MACOS_SIGN_IDENTITY: '-'
+      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ru-release-macos
+      - name: Test PDF interface library
+        run: cargo test --locked -p pdfcraft-ui-egui --lib
+      - name: Package Apple Silicon DMG
+        run: bash packaging/macos/package.sh --arch aarch64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ru-macos-package
+          path: dist/release/*-macos-aarch64.dmg
+          if-no-files-found: error
+
+  draft-release:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ru-*-package
+          path: release-assets
+          merge-multiple: true
+      - name: Generate SHA-256 checksums
+        working-directory: release-assets
+        run: sha256sum ./*.zip ./*.dmg > SHA256SUMS.txt
+      - name: Create draft with both installers
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG_NAME" ./release-assets/* \
+            --verify-tag --draft --title "PdfCraft RU $TAG_NAME" \
+            --notes "Windows x64 ZIP and macOS Apple Silicon DMG. macOS build is ad-hoc signed and not notarized; approve Gatekeeper only if you trust this fork. Draft release: test on both platforms before publishing."

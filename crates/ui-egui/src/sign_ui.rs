@@ -513,7 +513,9 @@ fn choose(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> bool {
             d.error = None;
         }
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if ui.add_enabled_ui(d.selected.is_some(), |ui| widgets::pill_button(ui, tl!("Continue"), true)).inner.clicked() {
+            // Allow single or double activation when selecting an existing ID.
+            let continue_button = ui.add_enabled_ui(d.selected.is_some(), |ui| widgets::pill_button(ui, tl!("Continue"), true)).inner;
+            if continue_button.clicked() || continue_button.double_clicked() {
                 d.step = SignStep::SignAs;
                 d.error = None;
             }
@@ -610,7 +612,9 @@ fn configure(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> bool {
         match result {
             Ok(i) => {
                 d.selected = Some(i);
-                d.step = SignStep::Choose;
+                // Imported IDs can proceed directly to signing confirmation.
+                // Newly created IDs remain in the picker for review.
+                d.step = if create { SignStep::Choose } else { SignStep::SignAs };
                 d.error = None;
                 d.new_id = NewIdDraft::default();
             }

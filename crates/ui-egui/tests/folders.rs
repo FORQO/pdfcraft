@@ -49,7 +49,11 @@ impl Drop for TempFolder {
 }
 
 fn harness(setup: impl FnOnce(&mut PdfCraftApp) + 'static) -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 1400.0)).build_eframe(move |_cc| {
+    harness_with_width(1400.0, setup)
+}
+
+fn harness_with_width(width: f32, setup: impl FnOnce(&mut PdfCraftApp) + 'static) -> Harness<'static, PdfCraftApp> {
+    let mut h = Harness::builder().with_size(egui::vec2(width, 1400.0)).build_eframe(move |_cc| {
         let mut app = PdfCraftApp::new();
         app.set_option("language", "en").unwrap();
         // List folders on the frame that asks, not on a worker thread.
@@ -204,7 +208,8 @@ fn a_long_pdf_name_is_cut_before_its_date_and_size() {
     let name = format!("{}.pdf", "Signed contract with a long name ".repeat(4));
     dir.file(&name, FIXTURE, Duration::from_secs(10));
     let folder = dir.path();
-    let mut h = harness(move |app| {
+    // A narrow window must force truncation; at 1400px this name fits in full.
+    let mut h = harness_with_width(760.0, move |app| {
         app.pin_folder(&folder);
     });
     h.run_steps(2);

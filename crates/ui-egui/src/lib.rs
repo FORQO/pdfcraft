@@ -74,6 +74,7 @@ mod icon_data;
 pub mod icons;
 pub mod last_session;
 mod pageboxes;
+mod pages_panel;
 mod palette;
 mod panels;
 #[cfg(not(target_arch = "wasm32"))]
@@ -469,6 +470,8 @@ pub struct PdfCraftApp {
     /// The custom stamp library, and the stamp being created.
     pub custom_stamps: Vec<stamps_ui::CustomStamp>,
     pub stamp_draft: stamps_ui::StampDraft,
+    /// Pre-filled text for the translation verification helper.
+    pub translation_statement: stamps_ui::TranslationStatementDraft,
     /// PDF Optimizer choices.
     pub optimize_draft: OptimizeDraft,
     /// The running optimization (Optimize PDF ▸ Advanced optimization).
@@ -681,6 +684,7 @@ impl PdfCraftApp {
             image_import: None,
             custom_stamps: Vec::new(),
             stamp_draft: Default::default(),
+            translation_statement: Default::default(),
             optimize_draft: OptimizeDraft::default(),
             optimize_run: None,
             progress_notice: None,
@@ -1088,9 +1092,9 @@ impl PdfCraftApp {
             Err(e) => {
                 use pdfcraft_engine::links::BlockedLink;
                 let template = if matches!(e, BlockedLink::MailFile | BlockedLink::MailEncodedWord) {
-                    "{who} in this document tried to open an address PdfCraft won't open: {e}."
+                    "{who} in this document tried to open an address Veyra PDF won't open: {e}."
                 } else {
-                    "{who} in this document tried to open an address PdfCraft won't open: {e}. Only web (http, https) and email (mailto) links open from documents."
+                    "{who} in this document tried to open an address Veyra PDF won't open: {e}. Only web (http, https) and email (mailto) links open from documents."
                 };
                 self.notify_fmt(template, &[("who", tl!(origin.noun())), ("e", &e.to_string())]);
             }
@@ -1636,6 +1640,8 @@ impl eframe::App for PdfCraftApp {
         self.process_signature_images();
         let dropped = ctx.input(|i| i.raw.dropped_files.clone());
         #[cfg(not(target_arch = "wasm32"))]
+        let dropped = pages_panel::take_drop(self, dropped, ctx);
+        #[cfg(not(target_arch = "wasm32"))]
         let dropped = self.drop_on_grid(dropped, ctx);
         for f in dropped {
             // Files dropped on the Combine files tab join its list instead of opening.
@@ -1676,6 +1682,7 @@ impl eframe::App for PdfCraftApp {
         self.poll_updates();
         // Shortcuts deferred last frame: the text field has taken that frame's typing since.
         let deferred = std::mem::take(&mut self.deferred_commands);
+        pages_panel::keys(self, ctx);
         self.shortcuts(ctx);
         // Scrolling is transient: never resume after changing tabs, opening a modal/palette,
         // or returning to a window that lost focus.
@@ -1724,7 +1731,7 @@ impl eframe::App for PdfCraftApp {
             .and_then(|i| self.session.get(self.views[i].id))
             .map(|d| d.display_name())
             .or_else(|| self.combine_showing().then(|| tl!("Combine files").to_owned()))
-            .map_or_else(|| "PdfCraft".to_owned(), |name| format!("{name} — PdfCraft"));
+            .map_or_else(|| "Veyra PDF".to_owned(), |name| format!("{name} — Veyra PDF"));
         if title != self.window_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
             self.window_title = title;
