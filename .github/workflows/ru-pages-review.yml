@@ -1,8 +1,8 @@
-name: Pages sidebar metadata finalization
+name: Stage verified Pages sidebar source
 
-# The sidebar and application tests ran in 38301943235; the only failure was
-# the asset manifest's two stale catalog hashes. Reuse those exact source bytes
-# and rerun the metadata tests. Normal PR CI must still validate the final commit.
+# Source and UI tests: 38301943235. Corrected attribution tests: 38305884435.
+# This job only stores verified non-workflow Git objects. It never moves refs.
+# Workflow changes require the user's authorized GitHub connection separately.
 on:
   push:
     branches: [feature/ru-ui-polish-and-releases]
@@ -13,183 +13,74 @@ permissions:
   contents: read
   actions: read
 
-concurrency:
-  group: pages-review-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
-  finalize-metadata:
+  stage-verified-source:
     if: github.repository == 'maxliv234-star/pdfcraft' && github.ref == 'refs/heads/feature/ru-ui-polish-and-releases'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     permissions:
       contents: write
       actions: read
-    env:
-      CARGO_BUILD_JOBS: '2'
-      CARGO_TERM_COLOR: never
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify unchanged source baseline and retrieve prior test evidence
+      - name: Retrieve exact source and successful metadata verification
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p review
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/11771943401/zip" > review/verified.zip
+          echo 'f695b6559ae895aa7734c10dea25c128f8c168171a31b46cc4d3c876599ce5be  review/verified.zip' | sha256sum --check
           python3 - <<'PY'
-          import subprocess
+          import hashlib, io, json, pathlib, subprocess
+          from zipfile import ZipFile
           changed = subprocess.check_output(['git', 'diff', '--name-only', 'ba0bf701b62c94a35b6ae0b187b166e92c597c8b', 'HEAD'], text=True).splitlines()
           if set(changed) != {'.github/workflows/ru-pages-review.yml'}:
               raise RuntimeError(f'Source baseline changed: {changed}')
+          paths = ['crates/ui-egui/src/canvas.rs', 'crates/ui-egui/src/lib.rs', 'crates/ui-egui/src/panels.rs', 'crates/ui-egui/src/pages_panel.rs', 'crates/ui-egui/src/i18n/ru.tsv', 'crates/ui-egui/src/i18n/zh-hans.tsv', 'crates/ui-egui/tests/pages_panel.rs', 'ATTRIBUTION.toml', 'ATTRIBUTION.md']
+          tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
+          with ZipFile('review/verified.zip') as artifact:
+              metadata = artifact.read('metadata-tests.log').decode('utf-8')
+              if 'FAILED' in metadata or 'test result: ok. 31 passed; 0 failed;' not in metadata:
+                  raise RuntimeError('Corrected metadata suite did not pass')
+              if 'assets: ok' not in artifact.read('assets.log').decode('utf-8'):
+                  raise RuntimeError('Asset policy did not pass')
+              identity = json.loads(artifact.read('SOURCE_IDENTITY.json'))
+              with ZipFile(io.BytesIO(artifact.read('final-source.zip'))) as source:
+                  if set(source.namelist()) != set(paths + ['.github/workflows/ru-macos.yml']):
+                      raise RuntimeError('Unexpected verified source files')
+                  for name, digest in identity['sha256'].items():
+                      if hashlib.sha256(source.read(name)).hexdigest() != digest:
+                          raise RuntimeError(f'Tested source hash mismatch: {name}')
+                  entries = [{'path': p, 'mode': '100644', 'type': 'blob', 'content': source.read(p).decode('utf-8')} for p in paths]
+                  hashes = {p: hashlib.sha256(source.read(p)).hexdigest() for p in source.namelist()}
+          temporary = ['.github/patches/pages-sidebar-module.rs', '.github/patches/pages-sidebar-tests.rs', '.github/patches/apply-pages-sidebar.py', '.github/patches/refine-pages-sidebar.py']
+          entries += [{'path': p, 'mode': '100644', 'type': 'blob', 'sha': None} for p in temporary]
+          if any(e['path'].startswith('.github/workflows/') for e in entries):
+              raise RuntimeError('GITHUB_TOKEN must not edit workflow files')
+          pathlib.Path('review/tree.json').write_text(json.dumps({'base_tree': tree, 'tree': entries}), encoding='utf-8')
+          pathlib.Path('review/SOURCE_HASHES.json').write_text(json.dumps(hashes, indent=2), encoding='utf-8')
           PY
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/11773075090/zip" > review/prior-verification.zip
-          echo 'eb758e3de9cce755aebcebbc3a4c6f07ec92d22ddcaf64ceaf2f36f24d6c84ba  review/prior-verification.zip' | sha256sum --check
-          python3 - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile
-          import re
-          with ZipFile('review/prior-verification.zip') as archive:
-              for name in ['pages-tests.log', 'workspace-tests.log', 'ui-clippy.log', 'clippy.log', 'reviewed-source.zip']:
-                  data = archive.read(name)
-                  Path('review', 'prior-' + name).write_bytes(data)
-          targeted = Path('review/prior-pages-tests.log').read_text()
-          if 'FAILED' in targeted or 'test result: ok. 20 passed; 0 failed;' not in targeted:
-              raise RuntimeError('Prior sidebar regressions did not pass')
-          workspace = Path('review/prior-workspace-tests.log').read_text()
-          failed = re.findall(r'^test (.+?) \.\.\. FAILED$', workspace, re.M)
-          if failed != ['assets::tests::the_real_manifest_passes']:
-              raise RuntimeError(f'Unexpected prior workspace failures: {failed}')
-          for filename in ['prior-ui-clippy.log', 'prior-clippy.log']:
-              log = Path('review', filename).read_text()
-              if 'error:' in log or 'Finished' not in log:
-                  raise RuntimeError(f'Unsuccessful prior Clippy: {filename}')
-          print('Prior code tests passed; asset manifest failure will be rerun, not hidden.')
-          PY
-      - name: Reproduce the verified sidebar changes
-        run: |
-          python3 .github/patches/apply-pages-sidebar.py
-          python3 .github/patches/refine-pages-sidebar.py
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: pages-sidebar-review
-          cache-on-failure: true
-          cache-workspace-crates: true
-      - name: Prove source identity and refresh only the two catalog hashes
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo fmt --all
-          python3 - <<'PY'
-          import hashlib, json, re, tomllib
-          from pathlib import Path
-          from zipfile import ZipFile
-          expected = {
-              'crates/ui-egui/src/canvas.rs': '2cbbee8edef657f89fc8afa3f3e3e8e255171602ffa707faebfde06ee0df472a',
-              'crates/ui-egui/src/lib.rs': '3e45bb0f395c8aa2fb46086c8b3b82349f2adc5ccc0ac1a332936b190c14d0d6',
-              'crates/ui-egui/src/panels.rs': '94bb8cbfae61833fb4717e1df9b8b02e3c5a1188a76bcdcaccc0e59647ec3385',
-              'crates/ui-egui/src/pages_panel.rs': 'bf7ae8b3a497a379b6672fa10e42a6df67e806ef428d0b35da4cf49f5a1d364d',
-              'crates/ui-egui/src/i18n/ru.tsv': '081690e634340ae47a3dd30a6247b6730b9dc180b7bfc38298236c4e3ee88fe7',
-              'crates/ui-egui/src/i18n/zh-hans.tsv': '039cfd845475f5fdb63b618d90bacf321724520efecbda9289c09367c992d747',
-              'crates/ui-egui/tests/pages_panel.rs': '4d32bcb03ad81ff0d8c585bb1394abb6dd5b3e1b3d5aab2cbb14cea4c1cd58b5',
-              '.github/workflows/ru-macos.yml': '6259e7d5f3006579b15d28004488b56f8b03880bd7846aef678a873bfb40aa0d',
-          }
-          with ZipFile('review/prior-reviewed-source.zip') as prior:
-              if set(prior.namelist()) != set(expected):
-                  raise RuntimeError('Prior source archive has unexpected files')
-              for filename, digest in expected.items():
-                  data = Path(filename).read_bytes()
-                  if hashlib.sha256(data).hexdigest() != digest or data != prior.read(filename):
-                      raise RuntimeError(f'Source differs from actual tested bytes: {filename}')
-          manifest = Path('ATTRIBUTION.toml')
-          before = manifest.read_text(encoding='utf-8')
-          text = before
-          catalogs = ['crates/ui-egui/src/i18n/ru.tsv', 'crates/ui-egui/src/i18n/zh-hans.tsv']
-          for filename in catalogs:
-              pattern = r'(?ms)(^\[\[asset\]\]\s*\npath = "' + re.escape(filename) + r'"\n(?:(?!^\[\[).)*?^sha256 = ")[0-9a-f]{64}("\s*$)'
-              text, count = re.subn(pattern, lambda match: match[1] + expected[filename] + match[2], text)
-              if count != 1:
-                  raise RuntimeError(f'Expected exactly one attribution entry: {filename}')
-          old, new = tomllib.loads(before), tomllib.loads(text)
-          for asset in new['asset']:
-              if asset['path'] in catalogs:
-                  original = next(a for a in old['asset'] if a['path'] == asset['path'])
-                  restored = dict(asset, sha256=original['sha256'])
-                  if restored != original:
-                      raise RuntimeError('Attribution provenance must not change')
-                  asset['sha256'] = original['sha256']
-          if old != new:
-              raise RuntimeError('Unexpected metadata changes')
-          manifest.write_text(text, encoding='utf-8')
-          Path('review/SOURCE_IDENTITY.json').write_text(json.dumps({'prior_run': 38301943235, 'sha256': expected, 'prior_workspace_failure': 'assets::tests::the_real_manifest_passes'}, indent=2), encoding='utf-8')
-          print('All eight source files are byte-identical to the tested artifact.')
-          PY
-      - name: Regenerate attribution and rerun the failed metadata suite
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo xtask assets --write 2>&1 | tee review/attribution.log
-          cargo test --locked -p xtask 2>&1 | tee review/metadata-tests.log
-          cargo xtask layers 2>&1 | tee review/layers.log
-          cargo xtask assets 2>&1 | tee review/assets.log
-          cargo fmt --all -- --check
-          git diff --check
-      - name: Prepare feature commit without moving any branch
+      - name: Store non-workflow Git tree without moving a branch
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json, os, pathlib, subprocess
-          paths = ['crates/ui-egui/src/canvas.rs', 'crates/ui-egui/src/lib.rs', 'crates/ui-egui/src/panels.rs', 'crates/ui-egui/src/pages_panel.rs', 'crates/ui-egui/src/i18n/ru.tsv', 'crates/ui-egui/src/i18n/zh-hans.tsv', 'crates/ui-egui/tests/pages_panel.rs', '.github/workflows/ru-macos.yml', 'ATTRIBUTION.toml', 'ATTRIBUTION.md']
-          changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
-          unknown = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
-          unexpected = set(changed + [p for p in unknown if not p.startswith('review/')]) - set(paths)
-          if unexpected:
-              raise RuntimeError(f'Unexpected source changes: {sorted(unexpected)}')
-          tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
-          entries = [{'path': p, 'mode': '100644', 'type': 'blob', 'content': pathlib.Path(p).read_text(encoding='utf-8')} for p in paths]
-          temporary = ['.github/patches/pages-sidebar-module.rs', '.github/patches/pages-sidebar-tests.rs', '.github/patches/apply-pages-sidebar.py', '.github/patches/refine-pages-sidebar.py', '.github/workflows/ru-pages-review.yml']
-          entries += [{'path': p, 'mode': '100644', 'type': 'blob', 'sha': None} for p in temporary]
-          pathlib.Path('review/tree.json').write_text(json.dumps({'base_tree': tree, 'tree': entries}), encoding='utf-8')
-          PY
-          tree="$(gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input review/tree.json --jq .sha)"
-          TREE_SHA="$tree" python3 - <<'PY'
-          import json, os, pathlib
-          data = {'message': 'feat(ui): reorder, delete and insert PDF pages in the sidebar', 'tree': os.environ['TREE_SHA'], 'parents': [os.environ['GITHUB_SHA']]}
-          pathlib.Path('review/commit.json').write_text(json.dumps(data), encoding='utf-8')
-          PY
-          gh api --method POST "repos/$GITHUB_REPOSITORY/git/commits" --input review/commit.json --jq .sha > review/PREPARED_COMMIT.txt
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/trees" --input review/tree.json --jq .sha > review/TREE_SHA.txt
           printf '%s\n' "$GITHUB_SHA" > review/PARENT_SHA.txt
-          echo "Prepared source commit (no branch moved): $(cat review/PREPARED_COMMIT.txt). Full PR CI remains required." >> "$GITHUB_STEP_SUMMARY"
-      - name: Export source and verification evidence
+          echo "Stored source tree: $(cat review/TREE_SHA.txt). No branch or release changed." >> "$GITHUB_STEP_SUMMARY"
+      - name: Clean temporary API payload
         if: always()
-        shell: bash
-        run: |
-          mkdir -p review
-          git diff > review/changes.patch
-          python3 - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile, ZIP_DEFLATED
-          paths = ['crates/ui-egui/src/canvas.rs', 'crates/ui-egui/src/lib.rs', 'crates/ui-egui/src/panels.rs', 'crates/ui-egui/src/pages_panel.rs', 'crates/ui-egui/src/i18n/ru.tsv', 'crates/ui-egui/src/i18n/zh-hans.tsv', 'crates/ui-egui/tests/pages_panel.rs', '.github/workflows/ru-macos.yml', 'ATTRIBUTION.toml', 'ATTRIBUTION.md']
-          with ZipFile('review/final-source.zip', 'w', ZIP_DEFLATED) as archive:
-              for name in paths:
-                  p = Path(name)
-                  if p.exists():
-                      archive.write(p, str(p))
-          PY
-          rm -f review/tree.json review/commit.json review/prior-verification.zip
+        run: rm -f review/tree.json review/verified.zip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pages-panel-finalization
+          name: pages-sidebar-git-tree
           path: review/
           if-no-files-found: error
           retention-days: 2
