@@ -125,6 +125,8 @@ M0 → M1 → M2 → M3 → M4 must happen in order. After M4, M5–M12 can run 
 
 ## Log
 
+- **2026-10-21 (DOCS, FORQO contribution templates):** Replaced the fork's basic Markdown issue templates with FORQO bug and feature forms, a documentation link and an expanded PR template. Kept upstream contribution rules linked from the PR template. Checked YAML structure, form fields and published template discovery. Product code, milestone progress, parity and estimates are unchanged; Cargo remains unavailable locally.
+
 - **2026-10-21 (DOCS, FORQO social preview):** Added a contributor-original 1280x640 repository social preview and its asset attribution. Verified PNG dimensions, size, hash and deterministic attribution output. Product code, milestone progress, parity and estimates are unchanged. Cargo remains unavailable locally.
 
 - **2026-10-21 (DOCS, FORQO README):** Unified the fork README layout, navigation and status summary with the FORQO repositories. Added a contributor-original banner with outlined Inter lettering, its asset manifest entry and generated attribution. Upstream credits, commands and limitations are retained; milestone progress, parity and estimates are unchanged. Cargo is unavailable locally; asset hash, attribution generation, SVG and README checks were run directly.
