@@ -3198,3 +3198,15 @@ licence_file = "LICENSE-MIT"
 kind = "illustration"
 usage = "README banner identifying the independent FORQO fork; not an upstream ArtCraft logo"
 sha256 = "6ba11d62e4c5f73f19b9d7f38de72b4496e3aea0cb36431ceb3eca87a9eebe2e"
+
+
+[[asset]]
+path = ".github/social-preview.png"
+title = "FORQO social preview for the independent PdfCraft RU fork"
+author = "FORQO (Max Liv)"
+source = "Contributor-original FORQO vector composition, rasterized at 1280x640; lettering outlined from the repository's Inter font (Rasmus Andersson, OFL-1.1, assets/fonts/OFL-Inter.txt). No font software embedded."
+licence = "MIT OR Apache-2.0"
+licence_file = "LICENSE-MIT"
+kind = "illustration"
+usage = "GitHub repository Social preview; identifies the independent FORQO fork"
+sha256 = "35ac59b4b513bf0f92fae25d7f1e08280bc7da5a9a75fee3f7633c74448a8cd2"

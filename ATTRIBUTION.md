@@ -4,7 +4,7 @@
 
 Every asset PdfCraft includes, bundles or uses to build its published material, with its author, source and licence. The policy is in [AGENTS.md](AGENTS.md) §1. The machine-readable list, with SHA-256 hashes, is [ATTRIBUTION.toml](ATTRIBUTION.toml). Licence texts are kept beside the assets and summarised in [NOTICE](NOTICE).
 
-## In this repository (256)
+## In this repository (257)
 
 | Asset | Title | Author | Licence | Source | Used for |
 |---|---|---|---|---|---|
@@ -264,6 +264,7 @@ Every asset PdfCraft includes, bundles or uses to build its published material, 
 | `packaging/macos/dmg/background.svg` | PdfCraft macOS DMG window background | @XusBadia | MIT OR Apache-2.0 | Original work for this repository, derived from the PdfCraft app icon (assets/app-icon/pdfcraft.svg, referenced via an SVG image element, not copied) | Finder window of the macOS DMG; rendered to background.tiff by packaging/macos/dmg/generate.py |
 | `packaging/macos/dmg/background.tiff` | PdfCraft macOS DMG window background (rendered) | @XusBadia | MIT OR Apache-2.0 | Rendered from packaging/macos/dmg/background.svg by packaging/macos/dmg/generate.py | 1x + 2x HiDPI 16-colour palette TIFF copied into the macOS DMG by packaging/macos/package.sh; includes the app icon and the free LittleCMS built-in sRGB profile |
 | `.github/forqo-banner.svg` | FORQO banner for the independent PdfCraft RU fork | FORQO (Max Liv) | MIT OR Apache-2.0 | Contributor-original FORQO vector identity; lettering outlined from the repository's Inter font (Rasmus Andersson, OFL-1.1, assets/fonts/OFL-Inter.txt). No font software embedded. | README banner identifying the independent FORQO fork; not an upstream ArtCraft logo |
+| `.github/social-preview.png` | FORQO social preview for the independent PdfCraft RU fork | FORQO (Max Liv) | MIT OR Apache-2.0 | Contributor-original FORQO vector composition, rasterized at 1280x640; lettering outlined from the repository's Inter font (Rasmus Andersson, OFL-1.1, assets/fonts/OFL-Inter.txt). No font software embedded. | GitHub repository Social preview; identifies the independent FORQO fork |
 
 ## Compiled in through dependencies (6)
 
