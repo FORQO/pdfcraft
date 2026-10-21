@@ -3186,3 +3186,15 @@ licence = "OFL-1.1"
 attribution = "https://github.com/storytold/craft-fonts/blob/main/ATTRIBUTION.md"
 kind = "font"
 usage = "Japanese fallback in the interface (BIZ UDPGothic first) and Japanese glyphs in edited PDF text (Shippori Mincho); the web build embeds only BIZ UDPGothic Regular"
+
+
+[[asset]]
+path = ".github/forqo-banner.svg"
+title = "FORQO banner for the independent PdfCraft RU fork"
+author = "FORQO (Max Liv)"
+source = "Contributor-original FORQO vector identity; lettering outlined from the repository's Inter font (Rasmus Andersson, OFL-1.1, assets/fonts/OFL-Inter.txt). No font software embedded."
+licence = "MIT OR Apache-2.0"
+licence_file = "LICENSE-MIT"
+kind = "illustration"
+usage = "README banner identifying the independent FORQO fork; not an upstream ArtCraft logo"
+sha256 = "6ba11d62e4c5f73f19b9d7f38de72b4496e3aea0cb36431ceb3eca87a9eebe2e"

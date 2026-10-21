@@ -125,6 +125,8 @@ M0 → M1 → M2 → M3 → M4 must happen in order. After M4, M5–M12 can run 
 
 ## Log
 
+- **2026-10-21 (DOCS, FORQO README):** Unified the fork README layout, navigation and status summary with the FORQO repositories. Added a contributor-original banner with outlined Inter lettering, its asset manifest entry and generated attribution. Upstream credits, commands and limitations are retained; milestone progress, parity and estimates are unchanged. Cargo is unavailable locally; asset hash, attribution generation, SVG and README checks were run directly.
+
 - **2026-10-21 (DOCS, fork maintenance):** Updated this fork's GitHub links to `FORQO` after the account rename. Repository-wide text audit found no remaining old username references. Runtime code, parity, milestone progress and effort estimates are unchanged. Rust quality gates could not run locally because Cargo is unavailable.
 
 
@@ -264,4 +266,5 @@ Newest first. One line per session: the date, what moved, and the new overall pe
   - Robustness sweep (963 of 983 files open, 0 crashes), text layer, find and select, tiles, web build, polish.
   - Overall ≈ 3–4%.
 - **2026-09-30 (session 1):** planning complete; viewer vertical slice.
+
 

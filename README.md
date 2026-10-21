@@ -1,14 +1,24 @@
-<h1 align="center">PdfCraft RU</h1>
-<p align="center"><b>Работа с PDF на базе открытого проекта PdfCraft</b><br>Просмотр · Страницы · Аннотации · Формы · CLI</p>
-<p align="center"><a href="https://github.com/FORQO/pdfcraft/tree/feature/ru-edition">Ветка RU-редакции</a> · <a href="docs/localization.md">Языки интерфейса</a> · <a href="docs/development.md">Разработка</a> · <a href="https://github.com/storytold/pdfcraft">Исходный проект</a></p>
+<p align="center">
+  <img src=".github/forqo-banner.svg" alt="PdfCraft RU · FORQO — Работа с PDF на базе открытого проекта PdfCraft." width="100%">
+</p>
+
+<p align="center"><b>Просмотр, страницы, аннотации, формы и инструменты автоматизации.</b></p>
+
+<p align="center"><a href="#быстрый-старт">Быстрый старт</a> · <a href="#возможности-базового-pdfcraft">Возможности</a> · <a href="#ru-редакция">RU-редакция</a> · <a href="#разработка-и-проверки">Разработка</a> · <a href="https://github.com/storytold/pdfcraft">Исходный проект</a></p>
+
+| Платформа / направление | Статус | Технологии |
+| :--- | :--- | :--- |
+| Desktop · Rust / egui | RU-форк в разработке | Rust · egui · CLI / MCP |
 
 ---
+
+## О проекте
 
 **Этот репозиторий — форк [storytold/pdfcraft](https://github.com/storytold/pdfcraft)**, проекта ArtCraft Team и сообщества. Здесь ведётся работа над RU-редакцией. PDF-движок, основной интерфейс и большая часть возможностей созданы авторами исходного проекта.
 
 > **Статус: в разработке.** Ветка `main` содержит базовую версию PdfCraft; работа над RU-редакцией ведётся в `feature/ru-edition`. Отдельный стабильный релиз этого форка пока не опубликован. Наличие русского языка в базовом PdfCraft само по себе не является отличием форка.
 
-## Что умеет базовый PdfCraft
+## Возможности базового PdfCraft
 
 - Просмотр PDF, поиск и извлечение текста.
 - Поворот, удаление, перестановка и извлечение страниц.
@@ -29,7 +39,7 @@
 
 Изменения интерфейса и выпуск сборок рассматриваются в [PR #1](https://github.com/FORQO/pdfcraft/pull/1). Наличие ветки или pull request не означает, что изменения уже входят в `main` или выпущенный релиз.
 
-## Запуск из исходников
+## Быстрый старт
 
 Требуются Rust **1.90+**, Cargo и нативные инструменты сборки для вашей ОС. На Windows используется набор MSVC Build Tools.
 
@@ -73,7 +83,7 @@ CLI, сценарии и MCP используют общий слой автом
 | `docs/` | Разработка, локализация и релизы |
 | `packaging/` | Упаковка под разные платформы |
 
-## Проверки и участие
+## Разработка и проверки
 
 ```bash
 cargo fmt --check
@@ -90,3 +100,7 @@ cargo test --workspace
 © 2026 ArtCraft Team и участники PdfCraft. Авторские уведомления сохранены в [NOTICE](NOTICE), происхождение ресурсов — в [ATTRIBUTION.md](ATTRIBUTION.md).
 
 PdfCraft RU — независимый форк; его оформление не означает поддержку или одобрение со стороны ArtCraft. Название и товарные знаки ArtCraft не входят в открытую лицензию исходного кода. Подробная документация оригинального проекта доступна в [upstream README](https://github.com/storytold/pdfcraft#readme).
+
+---
+
+<p align="center"><sub><a href="https://github.com/FORQO"><b>FORQO</b></a> · SOFTWARE ENGINEERING<br>Desktop applications · Open source · RU interfaces</sub></p>
