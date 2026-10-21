@@ -125,6 +125,9 @@ M0 → M1 → M2 → M3 → M4 must happen in order. After M4, M5–M12 can run 
 
 ## Log
 
+- **2026-10-21 (DOCS, fork maintenance):** Updated this fork's GitHub links to `FORQO` after the account rename. Repository-wide text audit found no remaining old username references. Runtime code, parity, milestone progress and effort estimates are unchanged. Rust quality gates could not run locally because Cargo is unavailable.
+
+
 - **2026-10-12 (RU fork documentation):** Replaced the fork landing page with a Russian overview, explicit upstream attribution, branch guidance, setup instructions and current release status. Added issue and pull request templates. Engine milestones and feature-parity estimates are unchanged.
 
 - **2026-10-09 (M5.7, #434 partial):** Natural-size image stamps placed at a click or through `stamp_custom` remain upright on rotated pages, with a displayed-space-sized rectangle and a counterrotated standard appearance matrix. Move, resize, restyle and undo/redo preserve that orientation. Native and external Poppler save/reopen rendering cover all four quarter-turns; UI tests verify the displayed bounds. Explicit rectangle placement, image signatures, PDF-page stamps and image-file orientation metadata remain outside this repair. #434 stays open; milestone table and effort estimates remain unchanged.

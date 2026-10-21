@@ -1,6 +1,6 @@
 <h1 align="center">PdfCraft RU</h1>
 <p align="center"><b>Работа с PDF на базе открытого проекта PdfCraft</b><br>Просмотр · Страницы · Аннотации · Формы · CLI</p>
-<p align="center"><a href="https://github.com/maxliv234-star/pdfcraft/tree/feature/ru-edition">Ветка RU-редакции</a> · <a href="docs/localization.md">Языки интерфейса</a> · <a href="docs/development.md">Разработка</a> · <a href="https://github.com/storytold/pdfcraft">Исходный проект</a></p>
+<p align="center"><a href="https://github.com/FORQO/pdfcraft/tree/feature/ru-edition">Ветка RU-редакции</a> · <a href="docs/localization.md">Языки интерфейса</a> · <a href="docs/development.md">Разработка</a> · <a href="https://github.com/storytold/pdfcraft">Исходный проект</a></p>
 
 ---
 
@@ -23,18 +23,18 @@
 
 | Ветка | Назначение |
 | :--- | :--- |
-| [`main`](https://github.com/maxliv234-star/pdfcraft/tree/main) | База исходного проекта и документация форка |
-| [`feature/ru-edition`](https://github.com/maxliv234-star/pdfcraft/tree/feature/ru-edition) | Работа над RU-редакцией |
-| [`feature/ru-ui-polish-and-releases`](https://github.com/maxliv234-star/pdfcraft/tree/feature/ru-ui-polish-and-releases) | Изменения типографики, компактных карточек и подготовки Windows-релизов |
+| [`main`](https://github.com/FORQO/pdfcraft/tree/main) | База исходного проекта и документация форка |
+| [`feature/ru-edition`](https://github.com/FORQO/pdfcraft/tree/feature/ru-edition) | Работа над RU-редакцией |
+| [`feature/ru-ui-polish-and-releases`](https://github.com/FORQO/pdfcraft/tree/feature/ru-ui-polish-and-releases) | Изменения типографики, компактных карточек и подготовки Windows-релизов |
 
-Изменения интерфейса и выпуск сборок рассматриваются в [PR #1](https://github.com/maxliv234-star/pdfcraft/pull/1). Наличие ветки или pull request не означает, что изменения уже входят в `main` или выпущенный релиз.
+Изменения интерфейса и выпуск сборок рассматриваются в [PR #1](https://github.com/FORQO/pdfcraft/pull/1). Наличие ветки или pull request не означает, что изменения уже входят в `main` или выпущенный релиз.
 
 ## Запуск из исходников
 
 Требуются Rust **1.90+**, Cargo и нативные инструменты сборки для вашей ОС. На Windows используется набор MSVC Build Tools.
 
 ```bash
-git clone https://github.com/maxliv234-star/pdfcraft.git
+git clone https://github.com/FORQO/pdfcraft.git
 cd pdfcraft
 cargo run --release -p pdfcraft -- example.pdf
 ```
@@ -82,7 +82,7 @@ cargo test --workspace
 ```
 
 Полный набор проверок описан в [CLAUDE.md](CLAUDE.md); правила проекта — в [AGENTS.md](AGENTS.md).
-Для ошибок используйте [Issues](https://github.com/maxliv234-star/pdfcraft/issues), для предложений по коду — [Pull requests](https://github.com/maxliv234-star/pdfcraft/pulls). При воспроизведении ошибок используйте искусственные или обезличенные PDF.
+Для ошибок используйте [Issues](https://github.com/FORQO/pdfcraft/issues), для предложений по коду — [Pull requests](https://github.com/FORQO/pdfcraft/pulls). При воспроизведении ошибок используйте искусственные или обезличенные PDF.
 
 ## Лицензия и авторство
 
