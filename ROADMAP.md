@@ -125,6 +125,8 @@ M0 → M1 → M2 → M3 → M4 must happen in order. After M4, M5–M12 can run 
 
 ## Log
 
+- **2026-10-21 (CI, FORQO Dependabot):** Configured weekly version-update PRs for the root Cargo workspace, detached filters fuzz workspace and GitHub Actions. Minor/patch version updates are grouped; majors remain separate, with five open version-update PRs per ecosystem. Vendored patched crates are not separate targets. YAML and manifest coverage checked. No engine, milestone, parity or estimate change; Cargo quality gates could not run locally because cargo is not installed.
+
 - **2026-10-21 (FORQO security policy):** Added the shared SECURITY.md with reporting, version triage and coordinated disclosure guidance; linked it from README and CONTRIBUTING. No engine, milestone or parity change. Markdown and repository links checked; Cargo quality gates were unavailable in this environment (cargo not installed).
 
 - **2026-10-21 (DOCS, FORQO community guidelines):** Added CONTRIBUTING.md and a shared FORQO code of conduct, with links from README and the PR template. Contribution guidance retains existing AGENTS.md / CLAUDE.md requirements, upstream credits and project quality gates. Checked document links, command references and published files. Product code, milestone progress, parity and estimates are unchanged; Cargo remains unavailable locally.
