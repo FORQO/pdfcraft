@@ -125,6 +125,8 @@ M0 → M1 → M2 → M3 → M4 must happen in order. After M4, M5–M12 can run 
 
 ## Log
 
+- **2026-10-21 (DOCS, FORQO community guidelines):** Added CONTRIBUTING.md and a shared FORQO code of conduct, with links from README and the PR template. Contribution guidance retains existing AGENTS.md / CLAUDE.md requirements, upstream credits and project quality gates. Checked document links, command references and published files. Product code, milestone progress, parity and estimates are unchanged; Cargo remains unavailable locally.
+
 - **2026-10-21 (DOCS, FORQO contribution templates):** Replaced the fork's basic Markdown issue templates with FORQO bug and feature forms, a documentation link and an expanded PR template. Kept upstream contribution rules linked from the PR template. Checked YAML structure, form fields and published template discovery. Product code, milestone progress, parity and estimates are unchanged; Cargo remains unavailable locally.
 
 - **2026-10-21 (DOCS, FORQO social preview):** Added a contributor-original 1280x640 repository social preview and its asset attribution. Verified PNG dimensions, size, hash and deterministic attribution output. Product code, milestone progress, parity and estimates are unchanged. Cargo remains unavailable locally.

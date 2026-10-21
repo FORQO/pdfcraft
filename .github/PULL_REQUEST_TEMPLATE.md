@@ -41,6 +41,8 @@
 
 Правила вклада: [AGENTS.md](https://github.com/FORQO/pdfcraft/blob/main/AGENTS.md) и [CLAUDE.md](https://github.com/FORQO/pdfcraft/blob/main/CLAUDE.md). Для ресурсов соблюдайте требования к лицензиям и атрибуции из AGENTS.md.
 
+Правила участия: [CONTRIBUTING.md](https://github.com/FORQO/pdfcraft/blob/main/CONTRIBUTING.md) · [CODE_OF_CONDUCT.md](https://github.com/FORQO/pdfcraft/blob/main/CODE_OF_CONDUCT.md).
+
 ---
 
 <sub>FORQO · Software Engineering · [PdfCraft RU](https://github.com/FORQO/pdfcraft)</sub>

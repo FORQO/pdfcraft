@@ -101,6 +101,10 @@ cargo test --workspace
 
 PdfCraft RU — независимый форк; его оформление не означает поддержку или одобрение со стороны ArtCraft. Название и товарные знаки ArtCraft не входят в открытую лицензию исходного кода. Подробная документация оригинального проекта доступна в [upstream README](https://github.com/storytold/pdfcraft#readme).
 
+## Участие
+
+[Как внести вклад](CONTRIBUTING.md) · [Кодекс поведения FORQO](CODE_OF_CONDUCT.md).
+
 ---
 
 <p align="center"><sub><a href="https://github.com/FORQO"><b>FORQO</b></a> · SOFTWARE ENGINEERING<br>Desktop applications · Open source · RU interfaces</sub></p>
