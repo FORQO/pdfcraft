@@ -14,5 +14,5 @@ workspace = true
 pdfcraft-cos = { workspace = true }
 pdfcraft-fonts = { workspace = true }
 roxmltree = "0.20"
-base64 = "0.22"
+base64 = "0.23"
 thiserror = { workspace = true }

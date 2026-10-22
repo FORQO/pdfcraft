@@ -18,7 +18,7 @@ serde_json = { workspace = true }
 pdfcraft-engine = { workspace = true }
 pdfcraft-cos = { workspace = true }
 pdfcraft-automation = { workspace = true }
-base64 = "0.22"
+base64 = "0.23"
 
 [features]
 default = ["mcp"]
