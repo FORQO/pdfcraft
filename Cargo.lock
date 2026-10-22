@@ -3485,7 +3485,7 @@ dependencies = [
 name = "pdfcraft-automation"
 version = "0.4.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "image",
  "pdfcraft-engine",
  "pdfcraft-organize",
@@ -3500,7 +3500,7 @@ dependencies = [
 name = "pdfcraft-cli"
 version = "0.4.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "pdfcraft-automation",
  "pdfcraft-cos",
  "pdfcraft-engine",
@@ -3765,7 +3765,7 @@ version = "0.4.0"
 dependencies = [
  "aes",
  "aws-lc-rs",
- "base64 0.22.1",
+ "base64 0.23.1",
  "cbc",
  "des",
  "getrandom 0.4.3",
@@ -3790,7 +3790,7 @@ name = "pdfcraft-ui-egui"
 version = "0.4.0"
 dependencies = [
  "arboard",
- "base64 0.22.1",
+ "base64 0.23.1",
  "eframe",
  "egui",
  "egui_extras",
@@ -3839,7 +3839,7 @@ dependencies = [
 name = "pdfcraft-xfa"
 version = "0.4.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "pdfcraft-cos",
  "pdfcraft-fonts",
  "roxmltree",

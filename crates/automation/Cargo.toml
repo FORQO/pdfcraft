@@ -15,7 +15,7 @@ pdfcraft-organize = { workspace = true }
 pdfcraft-platform = { workspace = true }
 serde_json = { workspace = true }
 png = "0.18"
-base64 = { version = "0.22", optional = true }
+base64 = { version = "0.23", optional = true }
 
 
 [features]
