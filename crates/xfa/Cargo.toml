@@ -13,6 +13,6 @@ workspace = true
 [dependencies]
 pdfcraft-cos = { workspace = true }
 pdfcraft-fonts = { workspace = true }
-roxmltree = "0.20"
+roxmltree = "0.21"
 base64 = "0.22"
 thiserror = { workspace = true }
